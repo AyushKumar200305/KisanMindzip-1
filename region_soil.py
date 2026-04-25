@@ -5,10 +5,11 @@ Pure-lookup advisor (NO LLM calls). Resolves a city or lat/lon to an Indian
 state, then returns a structured, bilingual recommendation built from
 soil_data.json. Existing /api/soil endpoint is untouched.
 """
+import difflib
 import json
 import logging
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 import requests
 
@@ -32,6 +33,74 @@ def _norm(s: str) -> str:
 
 def _pick_lang(language: str) -> str:
     return "en" if (language or "").lower().startswith("en") else "hi"
+
+
+def _fuzzy_city_match(key: str) -> Optional[str]:
+    """Try to recover from common typos by finding the closest known city."""
+    if not key:
+        return None
+    candidates = list(_DATA["city_to_state"].keys())
+    matches = difflib.get_close_matches(key, candidates, n=1, cutoff=0.85)
+    if matches:
+        return _DATA["city_to_state"].get(matches[0])
+    return None
+
+
+def _geocode_city_to_state(city: str) -> Optional[Tuple[str, str]]:
+    """Use OpenWeather forward geocoding to resolve a city (anywhere in India)
+    to its state. Returns (state_key, resolved_city_name) or None."""
+    if not _OPENWEATHER_API_KEY or not city:
+        return None
+    try:
+        r = requests.get(
+            "http://api.openweathermap.org/geo/1.0/direct",
+            params={"q": f"{city},IN", "limit": 5,
+                    "appid": _OPENWEATHER_API_KEY},
+            timeout=10,
+        ).json()
+        if not isinstance(r, list):
+            return None
+        for hit in r:
+            if (hit.get("country") or "").upper() != "IN":
+                continue
+            state_raw = hit.get("state") or ""
+            name = hit.get("name") or city
+            state_key = _DATA["state_aliases"].get(_norm(state_raw))
+            if state_key and state_key in _DATA["states"]:
+                return state_key, name
+    except requests.RequestException as e:
+        logger.warning("Forward geocode failed: %s", e)
+    return None
+
+
+def _nominatim_city_to_state(city: str) -> Optional[Tuple[str, str]]:
+    """Fallback geocoder using OpenStreetMap Nominatim. Covers Indian
+    districts, towns and villages that OpenWeather may not have.
+    Returns (state_key, resolved_city_name) or None."""
+    if not city:
+        return None
+    try:
+        r = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": f"{city}, India", "format": "json",
+                    "addressdetails": 1, "limit": 3, "countrycodes": "in"},
+            headers={"User-Agent": "KisanMind/1.0 (region-soil-advisor)"},
+            timeout=10,
+        ).json()
+        if not isinstance(r, list):
+            return None
+        for hit in r:
+            addr = hit.get("address") or {}
+            state_raw = addr.get("state") or ""
+            name = (addr.get("city") or addr.get("town") or addr.get("village")
+                    or addr.get("county") or addr.get("state_district")
+                    or city)
+            state_key = _DATA["state_aliases"].get(_norm(state_raw))
+            if state_key and state_key in _DATA["states"]:
+                return state_key, name
+    except requests.RequestException as e:
+        logger.warning("Nominatim geocode failed: %s", e)
+    return None
 
 
 def _resolve_city_to_state(city: str) -> Optional[str]:
@@ -128,17 +197,38 @@ def region_soil_advice(city: Optional[str] = None,
 
     # 1) City path
     if city and str(city).strip():
-        state_key = _resolve_city_to_state(city)
+        city_str = city.strip()
+        state_key = _resolve_city_to_state(city_str)
         if state_key and state_key in _DATA["states"]:
-            return _build_response(state_key, city.strip(), language, notice="")
-        # Unknown city → try GPS if also provided, else error out cleanly
+            return _build_response(state_key, city_str, language, notice="")
+
+        # 1a) Try OpenWeather geocoding for any Indian city not in our list
+        geo_hit = _geocode_city_to_state(city_str)
+        if geo_hit:
+            gk, resolved_name = geo_hit
+            return _build_response(gk, resolved_name or city_str,
+                                   language, notice="")
+
+        # 1b) Try OpenStreetMap (Nominatim) — covers districts like Wayanad
+        nom_hit = _nominatim_city_to_state(city_str)
+        if nom_hit:
+            gk, resolved_name = nom_hit
+            return _build_response(gk, resolved_name or city_str,
+                                   language, notice="")
+
+        # 1c) Try fuzzy match for typos against our static city list
+        fuzzy_key = _fuzzy_city_match(_norm(city_str))
+        if fuzzy_key and fuzzy_key in _DATA["states"]:
+            return _build_response(fuzzy_key, city_str, language, notice="")
+
+        # 1c) Unknown city → try GPS if also provided, else error out cleanly
         if lat is not None and lon is not None:
             geo = _reverse_geocode_state(lat, lon)
             if geo:
                 state_raw, city_name = geo
                 gk = _DATA["state_aliases"].get(_norm(state_raw))
                 if gk and gk in _DATA["states"]:
-                    return _build_response(gk, city_name or city.strip(),
+                    return _build_response(gk, city_name or city_str,
                                            language, notice="")
         return _invalid_location_response(language)
 
