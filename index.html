@@ -627,9 +627,6 @@
             "mandi.insightTitle": "📊 Price Insight",
             "mandi.trendTitle": "📈 Price Trend",
             "mandi.trendVs": "vs last check",
-            "mandi.findNearby": "📍 Find Nearby Mandi",
-            "mandi.askCity": "Please enter your city to find nearby mandis:",
-            "mandi.locating": "Finding nearby mandi...",
             "mandi.cropLabel": "Crop",
             "mandi.marketLabel": "Market",
             "mandi.priceLabel": "Price (Modal)",
@@ -780,9 +777,6 @@
             "mandi.insightTitle": "📊 कीमत संकेत",
             "mandi.trendTitle": "📈 कीमत का रुझान",
             "mandi.trendVs": "पिछली जाँच की तुलना में",
-            "mandi.findNearby": "📍 नजदीकी मंडी खोजें",
-            "mandi.askCity": "नज़दीकी मंडी खोजने के लिए अपना शहर लिखें:",
-            "mandi.locating": "नज़दीकी मंडी ढूँढी जा रही है...",
             "mandi.cropLabel": "फसल",
             "mandi.marketLabel": "मंडी",
             "mandi.priceLabel": "भाव (मोडल)",
@@ -890,7 +884,7 @@
                 </button>
             </div>`;
         el.innerHTML = `${listenBtn}<div class="whitespace-pre-wrap">${safe}</div>`;
-        if (!isError) speakReply(text);
+        if (!isError) autoSpeak(text);
     }
 
     // Manually replay a result aloud (always speaks, even if auto-read is off)
@@ -1026,7 +1020,7 @@
                         class="bg-white border border-green-600 text-green-700 px-2 py-1 rounded text-xs hover:bg-green-50">🔊</button>
                 </div>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
-            speakReply(data.reply);
+            autoSpeak(data.reply);
         } catch(e) {
             document.getElementById(typingId)?.remove();
             chatDiv.innerHTML += `<div class="text-red-500 text-sm p-2 bg-red-50 rounded">${t('result.error')}${escapeHtml(e.message)}</div>`;
@@ -1110,7 +1104,7 @@
                 <div class="p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-900 whitespace-pre-wrap">
                     ${escapeHtml(diseaseName || t("disease.healthy"))}
                 </div>`;
-            speakReply(diseaseName);
+            autoSpeak(diseaseName);
             return;
         }
 
@@ -1159,15 +1153,14 @@
                 ${row(labelPrev,      prevention,     "border-purple-300 bg-purple-50 text-purple-900")}
                 <div class="flex flex-wrap justify-between gap-2 pt-1">
                     ${findShopsBtn}
-                    <button type="button"
-                        onclick="speakReply(${escapeHtml(JSON.stringify(diseaseName + '. ' + cause + '. ' + (organic || solution) + '. ' + chemical))})"
-                        class="bg-white border border-green-600 text-green-700 px-3 py-1 rounded text-xs hover:bg-green-50">
-                        🔊 Sunें / Listen
-                    </button>
+                    ${listenButtonHTML(
+                        diseaseName + ". " + cause + ". " + (organic || solution) + ". " + chemical,
+                        "🔊 Sunें / Listen"
+                    )}
                 </div>
             </div>`;
 
-        speakReply(diseaseName + ". " + cause);
+        autoSpeak(diseaseName + ". " + cause);
     }
 
     // Build a Google Maps search URL and open it in a new tab.
@@ -1355,52 +1348,10 @@
                     <p class="text-sm font-bold text-green-800 mb-1">${t("mandi.adviceTitle")}</p>
                     <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(advice)}</p>
                     <div class="flex flex-wrap gap-2 mt-2">
-                        <button type="button"
-                            onclick="findNearbyMandi(${escapeHtml(JSON.stringify(stateForMaps))}, this)"
-                            class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-3 py-1.5 rounded-lg text-xs shadow-sm">
-                            ${escapeHtml(t("mandi.findNearby"))}
-                        </button>
-                        <button type="button" onclick="speakReply(${escapeHtml(JSON.stringify(advice))})"
-                            class="text-xs border border-green-600 text-green-700 px-3 py-1.5 rounded hover:bg-green-50">
-                            🔊 ${t("result.listen")}
-                        </button>
+                        ${listenButtonHTML(advice)}
                     </div>
                 </div>
             </div>`;
-    }
-
-    // Open Google Maps to find nearby mandis. Uses GPS first, then state hint, then prompts for city.
-    function findNearbyMandi(stateHint, btn) {
-        const baseQuery = (getApiLang && getApiLang() === "en") ? "mandi market" : "मंडी";
-
-        function openMapsAtCoords(lat, lng) {
-            const url = `https://www.google.com/maps/search/${encodeURIComponent(baseQuery)}/@${lat},${lng},12z`;
-            window.open(url, "_blank", "noopener");
-        }
-        function openMapsForCity(city) {
-            if (!city) return;
-            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(baseQuery + " near " + city)}`;
-            window.open(url, "_blank", "noopener");
-        }
-        function askCity() {
-            const fallback = (stateHint || "").trim();
-            const city = prompt(t("mandi.askCity"), fallback);
-            if (city && city.trim()) openMapsForCity(city.trim());
-        }
-
-        if (btn) {
-            btn.disabled = true;
-            const original = btn.innerHTML;
-            btn.innerHTML = escapeHtml(t("mandi.locating"));
-            setTimeout(() => { btn.disabled = false; btn.innerHTML = original; }, 6000);
-        }
-
-        if (!navigator.geolocation) { askCity(); return; }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => openMapsAtCoords(pos.coords.latitude, pos.coords.longitude),
-            ()    => askCity(),
-            { timeout: 6000, maximumAge: 60000 }
-        );
     }
 
     // ─────────────────────────────────────────
@@ -1460,7 +1411,8 @@
         }
     }
 
-    // "Get Mandi Prices" — try GPS first, fall back to selected state.
+    // "Get Mandi Prices" — strict crop + state lookup, no GPS.
+    // (GPS is reserved for the explicit "Use my location" / "Find Nearest Mandis (GPS)" buttons.)
     async function testMandi(event) {
         event.preventDefault();
         event.stopPropagation();
@@ -1472,36 +1424,12 @@
             document.getElementById("commodity").focus();
             return;
         }
-        // Need at least one source of location
-        if (!state && !navigator.geolocation) {
+        if (!state) {
             showResult("mandiResult", t("result.error") + t("mandi.noState"), true);
             document.getElementById("mandiState").focus();
             return;
         }
-
-        if (navigator.geolocation) {
-            disableBtn(btn);
-            setLoading("mandiResult", t("mandi.nearestFinding"));
-            navigator.geolocation.getCurrentPosition(
-                (pos) => _loadNearestMandis({
-                    lat: pos.coords.latitude,
-                    lon: pos.coords.longitude,
-                    btn,
-                }),
-                () => {
-                    // GPS denied/timeout → fall back to selected state
-                    if (state) {
-                        _loadNearestMandis({ state, btn });
-                    } else {
-                        enableBtn(btn);
-                        showResult("mandiResult", t("result.error") + t("mandi.noState"), true);
-                    }
-                },
-                { timeout: 8000, maximumAge: 60000, enableHighAccuracy: false }
-            );
-        } else {
-            _loadNearestMandis({ state, btn });
-        }
+        _loadNearestMandis({ state, btn });
     }
 
     // ─────────────────────────────────────────
@@ -1862,7 +1790,7 @@
     }
 
     function speakReply(text) {
-        if (!speakerOn || !text) return;
+        if (!text) return;
         if (!("speechSynthesis" in window)) return;
         try {
             window.speechSynthesis.cancel();
@@ -1878,6 +1806,34 @@
             window.speechSynthesis.speak(u);
         } catch(e) {}
     }
+
+    // Auto-play helper: only speaks if the user enabled the global speaker toggle.
+    // Manual Listen-button clicks always speak, regardless of the toggle.
+    function autoSpeak(text) {
+        if (speakerOn) speakReply(text);
+    }
+
+    // ─────────────────────────────────────────
+    // Centralized Listen button — robust against any text content
+    // (apostrophes, quotes, line breaks, HTML chars). All "🔊 Listen"
+    // buttons use this helper instead of inline onclick=speakReply(...)
+    // which used to break silently when the text contained quotes.
+    // ─────────────────────────────────────────
+    function listenButtonHTML(text, label) {
+        const safe = escapeHtml(String(text == null ? "" : text));
+        const lbl  = escapeHtml(label || (t("result.listen") || "🔊 Listen"));
+        return `<button type="button" class="listen-btn text-xs border border-green-600 text-green-700 px-3 py-1.5 rounded hover:bg-green-50"
+                    data-speak-text="${safe}">${lbl}</button>`;
+    }
+
+    // One delegated handler for every .listen-btn, anywhere on the page.
+    document.addEventListener("click", (ev) => {
+        const btn = ev.target.closest(".listen-btn");
+        if (!btn) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        speakReply(btn.dataset.speakText || "");
+    });
 
     // Some browsers populate voices asynchronously — trigger a load
     if ("speechSynthesis" in window) {
@@ -2017,23 +1973,15 @@
                     <p class="text-sm font-bold text-green-800 mb-1">${t("mandi.adviceTitle")}</p>
                     <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(advice || "")}</p>
                     <div class="flex flex-wrap gap-2 mt-2">
-                        <button type="button"
-                            onclick='findNearbyMandi(${JSON.stringify(escapeAttr(data.user_location?.state_guess || ""))}, this)'
-                            class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-3 py-1.5 rounded-lg text-xs shadow-sm">
-                            ${escapeHtml(t("mandi.findNearby"))}
-                        </button>
-                        <button type="button" onclick='speakReply(${JSON.stringify(advice || "")})'
-                            class="text-xs border border-green-600 text-green-700 px-3 py-1.5 rounded hover:bg-green-50">
-                            🔊 ${t("result.listen")}
-                        </button>
+                        ${listenButtonHTML(advice || "")}
                     </div>
                 </div>
             </div>`;
 
         // Render chart after DOM update
         setTimeout(() => _renderMandiChart(data.chart, isEn), 30);
-        // Auto TTS in selected language
-        if (advice) speakReply(advice);
+        // Auto TTS in selected language (only if user enabled the speaker)
+        autoSpeak(advice);
     }
 
     async function findNearestMandis(event) {
@@ -2192,10 +2140,7 @@
         el.innerHTML = `
             <div>
                 ${schemeHtml}
-                <button type="button" onclick="speakReply(${escapeHtml(JSON.stringify(advice.substring(0, 300)))})"
-                    class="text-xs border border-green-600 text-green-700 px-3 py-1 rounded hover:bg-green-50">
-                    🔊 ${t("result.listen")}
-                </button>
+                ${listenButtonHTML(advice.substring(0, 300))}
             </div>`;
     }
 
