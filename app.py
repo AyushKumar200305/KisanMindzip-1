@@ -49,6 +49,52 @@ def _safe_float(val, name):
     except (TypeError, ValueError):
         raise ValueError(f"Invalid value for '{name}': {val!r}")
 
+
+def _request_lang() -> str:
+    """Return 'en' or 'hi' based on the current request payload/query."""
+    try:
+        data = request.get_json(silent=True) or {}
+    except Exception:
+        data = {}
+    raw = (data.get("language")
+           or request.values.get("language")
+           or request.headers.get("X-Language")
+           or "hi")
+    return "en" if str(raw).lower().startswith("en") else "hi"
+
+
+def _friendly_error(exc: Exception, lang: str | None = None) -> str:
+    """Translate raw upstream errors (Groq 401, network, etc.) into a
+    short, bilingual message that's safe to show to farmers."""
+    if lang is None:
+        lang = _request_lang()
+    msg = str(exc).lower()
+
+    auth_markers = ("invalid api key", "invalid_api_key",
+                    "401", "unauthorized", "missing api key")
+    quota_markers = ("rate limit", "quota", "429", "too many requests",
+                     "insufficient_quota")
+    network_markers = ("timeout", "timed out", "connection",
+                       "network", "name or service not known")
+
+    if any(m in msg for m in auth_markers):
+        return ("AI service is not configured yet. Please ask the admin "
+                "to add the GROQ_API_KEY in Replit Secrets."
+                if lang == "en" else
+                "AI सेवा अभी सेट नहीं है। कृपया एडमिन से कहें कि "
+                "Replit Secrets में GROQ_API_KEY जोड़ें।")
+    if any(m in msg for m in quota_markers):
+        return ("AI service is busy right now. Please try again in a minute."
+                if lang == "en" else
+                "AI सेवा अभी व्यस्त है। कृपया एक मिनट बाद फिर कोशिश करें।")
+    if any(m in msg for m in network_markers):
+        return ("Network problem reaching the AI service. Please try again."
+                if lang == "en" else
+                "AI सेवा तक नेटवर्क नहीं पहुँच रहा। कृपया फिर कोशिश करें।")
+    return ("Service error — please try again."
+            if lang == "en" else
+            "सेवा में समस्या — कृपया फिर कोशिश करें।")
+
 # ─────────────────────────────────────────
 # 1. SOIL SENSE AGENT
 # ─────────────────────────────────────────
@@ -87,7 +133,7 @@ def soil_route():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.exception("Soil agent error")
-        return jsonify({"error": "Service error — please try again."}), 500
+        return jsonify({"error": _friendly_error(e)}), 500
 
 # ─────────────────────────────────────────
 # 2. KISAN CHATBOT
@@ -105,10 +151,10 @@ def chat_route():
         reply = chat_with_kisan(message, language=language)
         return jsonify({"reply": reply})
     except RuntimeError as e:
-        return jsonify({"error": str(e)}), 502
+        return jsonify({"error": _friendly_error(e)}), 502
     except Exception as e:
         logger.exception("Chat error")
-        return jsonify({"error": "Service error — please try again."}), 500
+        return jsonify({"error": _friendly_error(e)}), 500
 
 @app.route("/api/chat/reset", methods=["POST", "OPTIONS"])
 def reset_route():
@@ -197,7 +243,7 @@ def mandi_route():
         return jsonify(result)
     except Exception as e:
         logger.exception("Mandi agent error")
-        return jsonify({"error": "Service error — please try again."}), 500
+        return jsonify({"error": _friendly_error(e)}), 500
 
 # ─────────────────────────────────────────
 # 5. SARKARI YOJANA AGENT
@@ -207,15 +253,26 @@ def yojana_route():
     if request.method == "OPTIONS":
         return "", 200
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
+        query = (data.get("query") or "").strip()
+        if not query:
+            lang = _request_lang()
+            return jsonify({"error": (
+                "Please describe what scheme you're looking for "
+                "(e.g. 'subsidy for tractor')."
+                if lang == "en" else
+                "कृपया बताएँ आप किस योजना की जानकारी चाहते हैं "
+                "(जैसे 'ट्रैक्टर के लिए सब्सिडी')।"
+            )}), 400
         result = sarkari_yojana_agent(
-            query=data["query"],
-            state=data.get("state", None),
-            language=data.get("language", "hi")
+            query=query,
+            state=data.get("state") or None,
+            language=data.get("language", "hi"),
         )
         return jsonify(result)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Yojana agent error")
+        return jsonify({"error": _friendly_error(e)}), 500
 
 # ─────────────────────────────────────────
 # 4b. MANDI BHAV BY LOCATION (reverse-geocode → state, then reuse mandi agent)
@@ -360,7 +417,7 @@ def weather_route():
         return jsonify({"error": f"Weather service unreachable: {e}"}), 502
     except Exception as e:
         logger.exception("Weather route error")
-        return jsonify({"error": "Service error — please try again."}), 500
+        return jsonify({"error": _friendly_error(e)}), 500
 
 # ─────────────────────────────────────────
 # 7. SOIL INFO BY LOCATION (OpenWeather + SoilGrids)
@@ -450,7 +507,7 @@ def region_soil_route():
         return jsonify(result), status
     except Exception as e:
         logger.exception("Region soil error")
-        return jsonify({"ok": False, "error": "Service error — please try again."}), 500
+        return jsonify({"ok": False, "error": _friendly_error(e)}), 500
 
 
 # ─────────────────────────────────────────
