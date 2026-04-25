@@ -2024,7 +2024,10 @@
         // Show partial results so users see live feedback, but we only commit
         // finalized segments into the input field.
         r.interimResults = true;
-        r.maxAlternatives = 1;
+        // Ask the engine for several hypotheses; we'll pick the most confident
+        // one per finalized segment to improve word accuracy (especially for
+        // Indian-language speech and accented English).
+        r.maxAlternatives = 5;
         // Keep listening through brief pauses so trailing words aren't dropped.
         r.continuous = true;
 
@@ -2064,13 +2067,23 @@
         r.onresult = (event) => {
             const input = document.getElementById(_micTarget.inputId);
             if (!input) return;
-            // Walk every result so far. Concatenate finalized text and show
-            // any in-progress (interim) text as a live preview.
+            // For each result, pick the alternative with the highest
+            // confidence score (falls back to the first if confidence is
+            // unavailable). This noticeably improves word accuracy.
+            const pickBest = (res) => {
+                let best = res[0];
+                for (let j = 1; j < res.length; j++) {
+                    if ((res[j].confidence || 0) > (best.confidence || 0)) {
+                        best = res[j];
+                    }
+                }
+                return best.transcript;
+            };
             let finalText = "";
             let interimText = "";
             for (let i = 0; i < event.results.length; i++) {
                 const res = event.results[i];
-                const transcript = res[0].transcript;
+                const transcript = pickBest(res);
                 if (res.isFinal) finalText += transcript;
                 else interimText += transcript;
             }
