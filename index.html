@@ -345,64 +345,169 @@
         <!-- 4. MANDI BHAV -->
         <div id="page-mandi" class="page-section hidden">
             <div class="bg-white rounded-xl shadow p-4 sm:p-6">
-                <h2 class="text-xl font-bold text-green-700 mb-2">💰 <span data-i18n="mandi.title">Mandi Prices</span></h2>
+                <h2 class="text-xl font-bold text-green-700 mb-1">💰 <span data-i18n="mandi.title">Mandi Prices</span></h2>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="mandi.subtitle">Live mandi prices and selling advice.</p>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <!-- Crop dropdown -->
                     <div>
-                        <label class="text-sm text-gray-600" data-i18n="mandi.commodity">Crop name</label>
-                        <input id="commodity" type="text"
-                            data-i18n-placeholder="mandi.commodityPlaceholder"
-                            placeholder="e.g. Wheat, Rice"
-                            class="w-full border rounded p-2 mt-1"/>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">🌾 <span data-i18n="mandi.commodity">Crop</span></label>
+                        <select id="commodity"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-green-400 focus:outline-none">
+                            <option value="" data-i18n="mandi.selectCrop">-- Select Crop --</option>
+                            <option value="Wheat">🌾 Wheat (गेहूं)</option>
+                            <option value="Rice">🌾 Rice (चावल)</option>
+                            <option value="Maize">🌽 Maize (मक्का)</option>
+                            <option value="Cotton">🌿 Cotton (कपास)</option>
+                            <option value="Tomato">🍅 Tomato (टमाटर)</option>
+                            <option value="Onion">🧅 Onion (प्याज)</option>
+                            <option value="Potato">🥔 Potato (आलू)</option>
+                            <option value="Soybean">🫘 Soybean (सोयाबीन)</option>
+                            <option value="Mustard">🌼 Mustard (सरसों)</option>
+                            <option value="Sugarcane">🎋 Sugarcane (गन्ना)</option>
+                            <option value="Groundnut">🥜 Groundnut (मूंगफली)</option>
+                            <option value="Gram">🫘 Gram (चना)</option>
+                        </select>
                     </div>
+
+                    <!-- State dropdown -->
                     <div>
-                        <label class="text-sm text-gray-600" data-i18n="mandi.state">State</label>
-                        <input id="mandiState" type="text"
-                            data-i18n-placeholder="mandi.statePlaceholder"
-                            placeholder="e.g. Uttar Pradesh"
-                            class="w-full border rounded p-2 mt-1"/>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">📍 <span data-i18n="mandi.state">State</span></label>
+                        <select id="mandiState"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-green-400 focus:outline-none">
+                            <option value="" data-i18n="mandi.selectState">-- Select State --</option>
+                            <option>Andhra Pradesh</option>
+                            <option>Arunachal Pradesh</option>
+                            <option>Assam</option>
+                            <option>Bihar</option>
+                            <option>Chhattisgarh</option>
+                            <option>Goa</option>
+                            <option>Gujarat</option>
+                            <option>Haryana</option>
+                            <option>Himachal Pradesh</option>
+                            <option>Jharkhand</option>
+                            <option>Karnataka</option>
+                            <option>Kerala</option>
+                            <option>Madhya Pradesh</option>
+                            <option>Maharashtra</option>
+                            <option>Manipur</option>
+                            <option>Meghalaya</option>
+                            <option>Mizoram</option>
+                            <option>Nagaland</option>
+                            <option>Odisha</option>
+                            <option>Punjab</option>
+                            <option>Rajasthan</option>
+                            <option>Sikkim</option>
+                            <option>Tamil Nadu</option>
+                            <option>Telangana</option>
+                            <option>Tripura</option>
+                            <option>Uttar Pradesh</option>
+                            <option>Uttarakhand</option>
+                            <option>West Bengal</option>
+                        </select>
                     </div>
                 </div>
+
                 <button type="button" onclick="testMandi(event)"
-                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700"
+                    class="w-full bg-green-700 text-white py-3 rounded-xl font-semibold text-base hover:bg-green-800 active:scale-95 transition-all mb-3"
                     data-i18n="mandi.getBtn">Get Mandi Prices</button>
-                <div class="mt-3 flex items-center gap-2 flex-wrap">
-                    <span class="text-xs text-gray-500" data-i18n="mandi.orLocation">Or use your location:</span>
+
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs text-gray-500" data-i18n="mandi.orLocation">Or detect state from GPS:</span>
                     <button type="button" onclick="getMandiByLocation(event)"
-                        class="bg-white border border-green-600 text-green-700 px-3 py-1 rounded text-sm hover:bg-green-50">
+                        class="bg-white border border-green-600 text-green-700 px-3 py-1 rounded-lg text-sm hover:bg-green-50">
                         📍 <span data-i18n="mandi.useLocation">Use my location</span>
                     </button>
                     <span id="mandiDetectedLoc" class="text-xs text-green-700 hidden"></span>
                 </div>
-                <div id="mandiResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+
+                <div id="mandiResult" class="mt-4 hidden"></div>
             </div>
         </div>
 
         <!-- 5. SARKARI YOJANA -->
         <div id="page-yojana" class="page-section hidden">
             <div class="bg-white rounded-xl shadow p-4 sm:p-6">
-                <h2 class="text-xl font-bold text-green-700 mb-2">🏛️ <span data-i18n="yojana.title">Government Schemes</span></h2>
-                <p class="text-gray-500 text-sm mb-4" data-i18n="yojana.subtitle">Full info on government schemes for farmers.</p>
-                <div class="flex flex-col gap-3 mb-4">
-                    <div>
-                        <label class="text-sm text-gray-600" data-i18n="yojana.queryLabel">Type your question</label>
-                        <input id="yojanaQuery" type="text"
-                            data-i18n-placeholder="yojana.queryPlaceholder"
-                            placeholder="e.g. How to apply for PM-KISAN"
-                            class="w-full border rounded p-2 mt-1"/>
+                <h2 class="text-xl font-bold text-green-700 mb-1">🏛️ <span data-i18n="yojana.title">Government Schemes</span></h2>
+                <p class="text-gray-500 text-sm mb-4" data-i18n="yojana.subtitle">Select a scheme and state — get verified, step-by-step information.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <!-- Scheme dropdown -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">🏛️ <span data-i18n="yojana.schemeLabel">Select Scheme</span></label>
+                        <select id="yojanaScheme"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-green-400 focus:outline-none"
+                            onchange="onYojanaSchemeChange()">
+                            <option value="" data-i18n="yojana.schemePlaceholder">-- Select a Scheme --</option>
+                            <option value="PM-KISAN">🌾 PM-KISAN — ₹6000/year direct benefit</option>
+                            <option value="PMFBY">🛡️ PM Fasal Bima Yojana — Crop insurance</option>
+                            <option value="Kisan Credit Card">💳 Kisan Credit Card (KCC) — Farm loan at 4%</option>
+                            <option value="PMKSY drip sprinkler">💧 PM Krishi Sinchayee Yojana — Irrigation subsidy</option>
+                            <option value="Soil Health Card">🌱 Soil Health Card — Free soil testing</option>
+                            <option value="eNAM">📊 eNAM — Online mandi & best price</option>
+                            <option value="PM Kisan Maan-Dhan pension">👴 PM Kisan Maan-Dhan — ₹3000/month pension</option>
+                            <option value="PKVY organic farming">🌿 PKVY — Organic farming support</option>
+                            <option value="Kisan Vikas Patra">📮 Kisan Vikas Patra — Investment doubling</option>
+                            <option value="MGNREGA farm pond">🏗️ MGNREGA — Guaranteed wage + farm work</option>
+                        </select>
                     </div>
-                    <div>
-                        <label class="text-sm text-gray-600" data-i18n="yojana.stateLabel">State (optional)</label>
-                        <input id="yojanaState" type="text"
-                            data-i18n-placeholder="yojana.statePlaceholder"
-                            placeholder="e.g. Uttar Pradesh"
-                            class="w-full border rounded p-2 mt-1"/>
+
+                    <!-- State dropdown -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">📍 <span data-i18n="yojana.stateLabel">State (optional)</span></label>
+                        <select id="yojanaState"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-green-400 focus:outline-none">
+                            <option value="" data-i18n="yojana.stateDefault">-- All States --</option>
+                            <option>Andhra Pradesh</option>
+                            <option>Arunachal Pradesh</option>
+                            <option>Assam</option>
+                            <option>Bihar</option>
+                            <option>Chhattisgarh</option>
+                            <option>Goa</option>
+                            <option>Gujarat</option>
+                            <option>Haryana</option>
+                            <option>Himachal Pradesh</option>
+                            <option>Jharkhand</option>
+                            <option>Karnataka</option>
+                            <option>Kerala</option>
+                            <option>Madhya Pradesh</option>
+                            <option>Maharashtra</option>
+                            <option>Manipur</option>
+                            <option>Meghalaya</option>
+                            <option>Mizoram</option>
+                            <option>Nagaland</option>
+                            <option>Odisha</option>
+                            <option>Punjab</option>
+                            <option>Rajasthan</option>
+                            <option>Sikkim</option>
+                            <option>Tamil Nadu</option>
+                            <option>Telangana</option>
+                            <option>Tripura</option>
+                            <option>Uttar Pradesh</option>
+                            <option>Uttarakhand</option>
+                            <option>West Bengal</option>
+                        </select>
                     </div>
                 </div>
+
+                <!-- Custom query (collapsed by default, expands when "Other" or typing needed) -->
+                <div id="yojanaCustomWrap" class="mb-3 hidden">
+                    <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="yojana.queryLabel">Or type your own question</label>
+                    <input id="yojanaQuery" type="text"
+                        data-i18n-placeholder="yojana.queryPlaceholder"
+                        placeholder="e.g. How to apply for PM-KISAN"
+                        class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-400 focus:outline-none"/>
+                </div>
+                <button type="button" onclick="toggleYojanaCustom()"
+                    class="text-xs text-green-700 underline mb-3 block" data-i18n="yojana.customToggle">
+                    ✏️ Type a custom question instead
+                </button>
+
                 <button type="button" onclick="testYojana(event)"
-                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700"
+                    class="w-full bg-green-700 text-white py-3 rounded-xl font-semibold text-base hover:bg-green-800 active:scale-95 transition-all"
                     data-i18n="yojana.getBtn">Get Scheme Info</button>
-                <div id="yojanaResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+
+                <div id="yojanaResult" class="mt-4 hidden"></div>
             </div>
         </div>
 
@@ -492,25 +597,34 @@
 
             "mandi.title": "Mandi Prices",
             "mandi.subtitle": "Live mandi prices and selling advice.",
-            "mandi.commodity": "Crop name",
-            "mandi.commodityPlaceholder": "e.g. Wheat, Rice",
+            "mandi.commodity": "Crop",
+            "mandi.selectCrop": "-- Select Crop --",
             "mandi.state": "State",
-            "mandi.statePlaceholder": "e.g. Uttar Pradesh",
-            "mandi.getBtn": "Get Mandi Prices",
-            "mandi.orLocation": "Or use your location:",
+            "mandi.selectState": "-- Select State --",
+            "mandi.getBtn": "💰 Get Mandi Prices",
+            "mandi.orLocation": "Or detect state from GPS:",
             "mandi.useLocation": "Use my location",
             "mandi.fetching": "Fetching mandi prices...",
             "mandi.detected": "📍 Detected: ",
-            "mandi.noCommodity": "Please enter the crop name first (e.g. Wheat, Rice).",
+            "mandi.noCommodity": "Please select a crop first.",
+            "mandi.noState": "Please select a state.",
+            "mandi.liveTitle": "📊 Live Mandi Prices",
+            "mandi.noLive": "Live data not available — showing AI advice only.",
+            "mandi.adviceTitle": "💡 Selling Advice",
+            "mandi.perQuintal": "per quintal",
 
             "yojana.title": "Government Schemes",
-            "yojana.subtitle": "Full info on government schemes for farmers.",
-            "yojana.queryLabel": "Type your question",
-            "yojana.queryPlaceholder": "e.g. How to apply for PM-KISAN",
+            "yojana.subtitle": "Select a scheme and state — get verified, step-by-step information.",
+            "yojana.schemeLabel": "Select Scheme",
+            "yojana.schemePlaceholder": "-- Select a Scheme --",
             "yojana.stateLabel": "State (optional)",
-            "yojana.statePlaceholder": "e.g. Uttar Pradesh",
-            "yojana.getBtn": "Get Scheme Info",
+            "yojana.stateDefault": "-- All States --",
+            "yojana.queryLabel": "Or type your own question",
+            "yojana.queryPlaceholder": "e.g. How to apply for PM-KISAN",
+            "yojana.customToggle": "✏️ Type a custom question instead",
+            "yojana.getBtn": "🏛️ Get Scheme Info",
             "yojana.fetching": "Looking up the information...",
+            "yojana.noScheme": "Please select a scheme or type a custom question.",
 
             "result.listen": "🔊 Listen",
             "result.error": "Error: ",
@@ -588,25 +702,34 @@
 
             "mandi.title": "मंडी भाव",
             "mandi.subtitle": "लाइव मंडी कीमतें और बेचने की सलाह।",
-            "mandi.commodity": "फसल का नाम",
-            "mandi.commodityPlaceholder": "जैसे गेहूँ, धान",
+            "mandi.commodity": "फसल",
+            "mandi.selectCrop": "-- फसल चुनें --",
             "mandi.state": "राज्य",
-            "mandi.statePlaceholder": "जैसे उत्तर प्रदेश",
-            "mandi.getBtn": "मंडी कीमतें देखें",
-            "mandi.orLocation": "या सीधे अपनी लोकेशन से:",
+            "mandi.selectState": "-- राज्य चुनें --",
+            "mandi.getBtn": "💰 मंडी कीमतें देखें",
+            "mandi.orLocation": "या GPS से राज्य जानें:",
             "mandi.useLocation": "मेरी लोकेशन से देखें",
             "mandi.fetching": "मंडी कीमतें ली जा रही हैं...",
             "mandi.detected": "📍 पता चला: ",
-            "mandi.noCommodity": "पहले फसल का नाम लिखें (जैसे गेहूँ, धान)।",
+            "mandi.noCommodity": "पहले फसल चुनें।",
+            "mandi.noState": "पहले राज्य चुनें।",
+            "mandi.liveTitle": "📊 लाइव मंडी भाव",
+            "mandi.noLive": "लाइव डेटा उपलब्ध नहीं — AI सलाह दिखाई जा रही है।",
+            "mandi.adviceTitle": "💡 बेचने की सलाह",
+            "mandi.perQuintal": "प्रति क्विंटल",
 
             "yojana.title": "सरकारी योजना",
-            "yojana.subtitle": "किसानों के लिए सरकारी योजनाओं की पूरी जानकारी।",
-            "yojana.queryLabel": "अपना सवाल लिखें",
-            "yojana.queryPlaceholder": "जैसे पीएम-किसान में आवेदन कैसे करें",
+            "yojana.subtitle": "योजना और राज्य चुनें — सत्यापित, चरणबद्ध जानकारी पाएँ।",
+            "yojana.schemeLabel": "योजना चुनें",
+            "yojana.schemePlaceholder": "-- योजना चुनें --",
             "yojana.stateLabel": "राज्य (वैकल्पिक)",
-            "yojana.statePlaceholder": "जैसे उत्तर प्रदेश",
-            "yojana.getBtn": "योजना की जानकारी लें",
+            "yojana.stateDefault": "-- सभी राज्य --",
+            "yojana.queryLabel": "या अपना सवाल लिखें",
+            "yojana.queryPlaceholder": "जैसे पीएम-किसान में आवेदन कैसे करें",
+            "yojana.customToggle": "✏️ अपना सवाल लिखें",
+            "yojana.getBtn": "🏛️ योजना की जानकारी लें",
             "yojana.fetching": "जानकारी खोजी जा रही है...",
+            "yojana.noScheme": "कृपया कोई योजना चुनें या अपना सवाल लिखें।",
 
             "result.listen": "🔊 सुनें",
             "result.error": "त्रुटि: ",
@@ -980,7 +1103,49 @@
         }
     }
 
+    // ─────────────────────────────────────────
     // 4. Mandi Bhav
+    // ─────────────────────────────────────────
+    function renderMandiCard(data) {
+        const el = document.getElementById("mandiResult");
+        el.classList.remove("hidden");
+        const prices = data.live_prices || [];
+        let priceHtml = "";
+        if (prices.length > 0) {
+            const rows = prices.map(r => `
+                <div class="bg-white border border-green-200 rounded-xl p-3 flex flex-col gap-1">
+                    <div class="font-semibold text-green-800 text-sm">🏪 ${escapeHtml(r.market || "N/A")}</div>
+                    <div class="text-xs text-gray-500">${escapeHtml(r.district || "")}${r.state ? " · " + escapeHtml(r.state) : ""}</div>
+                    <div class="flex gap-2 flex-wrap text-xs mt-1">
+                        <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Min ₹${escapeHtml(String(r.min_price || "—"))}</span>
+                        <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-bold">Modal ₹${escapeHtml(String(r.modal_price || "—"))}</span>
+                        <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Max ₹${escapeHtml(String(r.max_price || "—"))}</span>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">${escapeHtml(r.arrival_date || "")} · ${t("mandi.perQuintal")}</div>
+                </div>`).join("");
+            priceHtml = `
+                <div class="mb-3">
+                    <p class="text-sm font-bold text-green-800 mb-2">${t("mandi.liveTitle")} — ${escapeHtml(data.commodity || "")}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${rows}</div>
+                </div>`;
+        } else {
+            priceHtml = `<p class="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-3">⚠️ ${t("mandi.noLive")}</p>`;
+        }
+        const advice = data.agent_advice || "";
+        el.innerHTML = `
+            <div class="space-y-2">
+                ${priceHtml}
+                <div class="bg-green-50 border border-green-200 rounded-xl p-3">
+                    <p class="text-sm font-bold text-green-800 mb-1">${t("mandi.adviceTitle")}</p>
+                    <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(advice)}</p>
+                    <button type="button" onclick="speakReply(${JSON.stringify(advice)})"
+                        class="mt-2 text-xs border border-green-600 text-green-700 px-3 py-1 rounded hover:bg-green-50">
+                        🔊 ${t("result.listen")}
+                    </button>
+                </div>
+            </div>`;
+    }
+
     async function testMandi(event) {
         event.preventDefault();
         event.stopPropagation();
@@ -992,7 +1157,7 @@
             return;
         }
         if (!state) {
-            showResult("mandiResult", t("result.error") + "Please enter the state name.", true);
+            showResult("mandiResult", t("result.error") + t("mandi.noState"), true);
             document.getElementById("mandiState").focus();
             return;
         }
@@ -1006,7 +1171,7 @@
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)
             });
-            showResult("mandiResult", data.agent_advice);
+            renderMandiCard(data);
         } catch(e) {
             showResult("mandiResult", t("result.error") + e.message, true);
         } finally {
@@ -1314,7 +1479,7 @@
                         locBadge.innerText = t("mandi.detected") + data.detected_state;
                         locBadge.classList.remove("hidden");
                     }
-                    showResult("mandiResult", data.agent_advice || JSON.stringify(data));
+                    renderMandiCard(data);
                 } catch(e) {
                     showResult("mandiResult", t("result.error") + e.message, true);
                 }
@@ -1323,14 +1488,116 @@
         );
     }
 
+    // ─────────────────────────────────────────
     // 5. Sarkari Yojana
+    // ─────────────────────────────────────────
+    let _yojanaCustomOpen = false;
+
+    function toggleYojanaCustom() {
+        _yojanaCustomOpen = !_yojanaCustomOpen;
+        const wrap = document.getElementById("yojanaCustomWrap");
+        wrap.classList.toggle("hidden", !_yojanaCustomOpen);
+        if (_yojanaCustomOpen) document.getElementById("yojanaQuery").focus();
+    }
+
+    function onYojanaSchemeChange() {
+        const val = document.getElementById("yojanaScheme").value;
+        // If user picks from dropdown, collapse the custom box
+        if (val) {
+            document.getElementById("yojanaCustomWrap").classList.add("hidden");
+            _yojanaCustomOpen = false;
+        }
+    }
+
+    function renderYojanaCard(data) {
+        const el = document.getElementById("yojanaResult");
+        el.classList.remove("hidden");
+        const raw = data.agent_advice || "";
+        if (!raw) {
+            el.innerHTML = `<div class="p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800">No information found. Please try a different query.</div>`;
+            return;
+        }
+
+        // Parse the formatted text from sarkari_yojana_agent into sections
+        // Format: "📌 Name\n\n✅ Eligibility:\n• ...\n\n🎁 Benefits:\n• ...\n\n📝 How to Apply:\n1. ..."
+        // Split multiple schemes by horizontal rule
+        const schemes = raw.split(/─+/).map(s => s.trim()).filter(Boolean);
+
+        const schemeHtml = schemes.map(block => {
+            const lines = block.split("\n").filter(s => s.trim());
+            const titleLine = lines.find(l => l.startsWith("📌") || l.startsWith("पीएम") || l.trim());
+            const title = titleLine ? titleLine.replace(/^📌\s*/, "").trim() : "";
+
+            function extractSection(marker) {
+                const idx = lines.findIndex(l => l.includes(marker));
+                if (idx < 0) return [];
+                const items = [];
+                for (let i = idx + 1; i < lines.length; i++) {
+                    const l = lines[i].trim();
+                    if (!l || (l.startsWith("📌") || l.startsWith("✅") || l.startsWith("🎁") || l.startsWith("📝"))) break;
+                    items.push(l.replace(/^[•\-\d]+[.)]\s*/, "").trim());
+                }
+                return items.filter(Boolean);
+            }
+
+            const eligibility = extractSection("✅");
+            const benefits = extractSection("🎁");
+            const steps = extractSection("📝");
+
+            function ul(items, color) {
+                return items.map(it => `<li class="flex gap-2"><span class="${color}">•</span><span>${escapeHtml(it)}</span></li>`).join("");
+            }
+            function ol(items) {
+                return items.map((it, i) => `<li class="flex gap-2"><span class="font-bold text-green-700 min-w-[1.2em]">${i+1}.</span><span>${escapeHtml(it)}</span></li>`).join("");
+            }
+
+            return `
+                <div class="border border-green-200 rounded-xl overflow-hidden mb-3">
+                    <div class="bg-green-700 text-white px-4 py-2 font-semibold text-sm">📌 ${escapeHtml(title)}</div>
+                    <div class="p-3 space-y-3">
+                        ${eligibility.length ? `
+                        <div>
+                            <p class="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">✅ Eligibility / पात्रता</p>
+                            <ul class="text-sm text-gray-700 space-y-1 leading-relaxed">${ul(eligibility, "text-green-600")}</ul>
+                        </div>` : ""}
+                        ${benefits.length ? `
+                        <div>
+                            <p class="text-xs font-bold text-yellow-700 uppercase tracking-wide mb-1">🎁 Benefits / लाभ</p>
+                            <ul class="text-sm text-gray-700 space-y-1 leading-relaxed">${ul(benefits, "text-yellow-500")}</ul>
+                        </div>` : ""}
+                        ${steps.length ? `
+                        <div>
+                            <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">📝 How to Apply / आवेदन प्रक्रिया</p>
+                            <ol class="text-sm text-gray-700 space-y-1 leading-relaxed list-none">${ol(steps)}</ol>
+                        </div>` : ""}
+                        ${!eligibility.length && !benefits.length && !steps.length ? `<p class="text-sm text-gray-700 whitespace-pre-wrap">${escapeHtml(block)}</p>` : ""}
+                    </div>
+                </div>`;
+        }).join("");
+
+        const advice = raw;
+        el.innerHTML = `
+            <div>
+                ${schemeHtml}
+                <button type="button" onclick="speakReply(${JSON.stringify(advice.substring(0, 300))})"
+                    class="text-xs border border-green-600 text-green-700 px-3 py-1 rounded hover:bg-green-50">
+                    🔊 ${t("result.listen")}
+                </button>
+            </div>`;
+    }
+
     async function testYojana(event) {
         event.preventDefault();
         event.stopPropagation();
-        const query = document.getElementById("yojanaQuery").value.trim();
+
+        // Get query: prefer scheme dropdown, fall back to custom text input
+        const schemeVal = document.getElementById("yojanaScheme").value.trim();
+        const customEl = document.getElementById("yojanaQuery");
+        const customVal = customEl ? customEl.value.trim() : "";
+        const query = schemeVal || customVal;
+
         if (!query) {
-            showResult("yojanaResult", t("result.error") + "Please enter a question.", true);
-            document.getElementById("yojanaQuery").focus();
+            showResult("yojanaResult", t("result.error") + t("yojana.noScheme"), true);
             return;
         }
         const payload = {
@@ -1347,7 +1614,7 @@
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)
             });
-            showResult("yojanaResult", data.agent_advice);
+            renderYojanaCard(data);
         } catch(e) {
             showResult("yojanaResult", t("result.error") + e.message, true);
         } finally {
