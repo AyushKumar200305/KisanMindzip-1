@@ -95,6 +95,46 @@ def crop_doctor_route():
     return jsonify(result)
 
 # ─────────────────────────────────────────
+# 3b. QUICK DISEASE SCAN (image-only upload)
+# ─────────────────────────────────────────
+@app.route("/api/disease", methods=["POST", "OPTIONS"])
+def disease_route():
+    """
+    Lightweight image-upload endpoint for quick crop-disease detection.
+    Reuses the existing crop_doctor_agent so behaviour stays consistent.
+    Form fields:  image (required, multipart),  language (optional, "hi"/"en")
+    """
+    if request.method == "OPTIONS":
+        return "", 200
+
+    if "image" not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
+
+    image = request.files["image"]
+    if not image.filename:
+        return jsonify({"error": "Empty image file"}), 400
+
+    language = request.form.get("language", "hi")
+
+    image_path = f"temp_disease_{image.filename}"
+    image.save(image_path)
+
+    try:
+        result = crop_doctor_agent(image_path, crop_name=None, language=language)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+    # Normalise the field name so the frontend can render it directly.
+    diagnosis = result.get("diagnosis") or result.get("agent_advice") or ""
+    return jsonify({
+        "diagnosis": diagnosis,
+        "raw": result,
+    })
+
+# ─────────────────────────────────────────
 # 4. MANDI BHAV AGENT
 # ─────────────────────────────────────────
 @app.route("/api/mandi", methods=["POST", "OPTIONS"])

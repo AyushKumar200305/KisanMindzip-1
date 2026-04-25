@@ -175,6 +175,26 @@
                     data-i18n="doctor.diagnoseBtn">Diagnose Disease</button>
                 <div id="cropDoctorResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
             </div>
+
+            <!-- 3b. QUICK DISEASE SCAN (separate upload, talks to /api/disease) -->
+            <div class="bg-white rounded-xl shadow p-6 mt-4 border-l-4 border-green-500">
+                <h2 class="text-xl font-bold text-green-700 mb-2">🦠 <span data-i18n="disease.title">Quick Disease Scan</span></h2>
+                <p class="text-gray-500 text-sm mb-4" data-i18n="disease.subtitle">Just upload a leaf or crop photo — get an instant disease check.</p>
+                <div class="flex flex-col gap-3 mb-4">
+                    <div>
+                        <label class="text-sm text-gray-600" data-i18n="disease.uploadLabel">Upload crop / leaf photo</label>
+                        <input id="diseaseImage" type="file"
+                            accept="image/*,.webp,.jpg,.jpeg,.png"
+                            class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <img id="diseasePreview" src="" alt="Preview"
+                        class="hidden w-48 h-48 object-cover rounded-lg border-2 border-green-300"/>
+                </div>
+                <button type="button" onclick="detectDisease(event)"
+                    class="w-full bg-green-700 text-white py-3 rounded-lg font-medium hover:bg-green-800"
+                    data-i18n="disease.detectBtn">Detect Disease</button>
+                <div id="diseaseResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+            </div>
         </div>
 
         <!-- 4. MANDI BHAV -->
@@ -318,6 +338,13 @@
             "doctor.noImage": "Please select an image first!",
             "doctor.diagnosing": "Diagnosing... please wait a moment",
 
+            "disease.title": "Quick Disease Scan",
+            "disease.subtitle": "Just upload a leaf or crop photo — get an instant disease check.",
+            "disease.uploadLabel": "Upload crop / leaf photo",
+            "disease.detectBtn": "Detect Disease",
+            "disease.scanning": "Scanning the image... please wait",
+            "disease.noImage": "Please select a photo first!",
+
             "mandi.title": "Mandi Prices",
             "mandi.subtitle": "Live mandi prices and selling advice.",
             "mandi.commodity": "Crop name",
@@ -406,6 +433,13 @@
             "doctor.diagnoseBtn": "रोग की पहचान करें",
             "doctor.noImage": "पहले एक तस्वीर चुनें!",
             "doctor.diagnosing": "जाँच की जा रही है... थोड़ा इंतज़ार करें",
+
+            "disease.title": "त्वरित रोग जाँच",
+            "disease.subtitle": "बस पत्ती या फसल की तस्वीर अपलोड करें — तुरंत रोग की जाँच पाएँ।",
+            "disease.uploadLabel": "फसल / पत्ती की तस्वीर अपलोड करें",
+            "disease.detectBtn": "रोग पहचानें",
+            "disease.scanning": "तस्वीर की जाँच हो रही है... कृपया प्रतीक्षा करें",
+            "disease.noImage": "पहले एक तस्वीर चुनें!",
 
             "mandi.title": "मंडी भाव",
             "mandi.subtitle": "लाइव मंडी कीमतें और बेचने की सलाह।",
@@ -620,6 +654,52 @@
             reader.readAsDataURL(file);
         }
     });
+
+    // 3b. Quick Disease Scan — image preview
+    document.getElementById("diseaseImage").addEventListener("change", function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById("diseasePreview");
+                preview.src = e.target.result;
+                preview.classList.remove("hidden");
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 3b. Quick Disease Scan — call /api/disease and show result below upload
+    async function detectDisease(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+
+        const imageFile = document.getElementById("diseaseImage").files[0];
+        if (!imageFile) {
+            showResult("diseaseResult", t("disease.noImage"), true);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        formData.append("language", getApiLang());
+
+        try {
+            setLoading("diseaseResult", t("disease.scanning"));
+            const res = await fetch(`${BASE_URL}/api/disease`, {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
+            if (data.error) {
+                showResult("diseaseResult", t("result.error") + data.error, true);
+                return;
+            }
+            const output = data.diagnosis || JSON.stringify(data);
+            showResult("diseaseResult", output);
+        } catch(e) {
+            showResult("diseaseResult", t("result.error") + e.message, true);
+        }
+    }
 
     async function testCropDoctor(event) {
         event.preventDefault();
