@@ -1449,9 +1449,68 @@
         );
     }
 
+    // ─────────────────────────────────────────
+    // Unified nearest-mandi loader. Both "Get Mandi Prices" and
+    // "Find Nearest Mandis (GPS)" buttons funnel through this so the output
+    // format and quality is identical — only the input source changes:
+    //   • If GPS coords are available → distance-sort from the user.
+    //   • Else if a state is selected  → distance-sort from the state centroid.
+    // The backend always falls back to estimated prices when data.gov.in fails,
+    // so neither path can return empty/random results.
+    // ─────────────────────────────────────────
+    async function _loadNearestMandis({ lat = null, lon = null, state = null, btn = null } = {}) {
+        const commodity = document.getElementById("commodity").value.trim();
+        if (!commodity) {
+            showResult("mandiResult", t("result.error") + t("mandi.noCommodity"), true);
+            document.getElementById("commodity").focus();
+            return;
+        }
+        const payload = {
+            commodity,
+            language: getApiLang(),
+            limit: 5,
+        };
+        if (lat != null && lon != null) {
+            payload.lat = lat;
+            payload.lon = lon;
+        }
+        if (state) payload.state = state;
+
+        if (btn) disableBtn(btn);
+        setLoading("mandiResult", t("mandi.nearestFinding"));
+        try {
+            const data = await apiFetch(`${BASE_URL}/api/mandi/nearest`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (data && data.ok === false) {
+                showResult("mandiResult", t("result.error") + (data.error || ""), true);
+                return;
+            }
+            // Mirror detected state in the dropdown for context
+            const stateGuess = data.user_location && data.user_location.state_guess;
+            if (stateGuess) {
+                const sel = document.getElementById("mandiState");
+                const opt = Array.from(sel.options).find(o => o.value.toLowerCase() === String(stateGuess).toLowerCase());
+                if (opt) sel.value = opt.value;
+                const badge = document.getElementById("mandiDetectedLoc");
+                badge.innerText = t("mandi.detected") + stateGuess;
+                badge.classList.remove("hidden");
+            }
+            _renderNearestMandiCard(data);
+        } catch (e) {
+            showResult("mandiResult", t("result.error") + e.message, true);
+        } finally {
+            if (btn) enableBtn(btn);
+        }
+    }
+
+    // "Get Mandi Prices" — try GPS first, fall back to selected state.
     async function testMandi(event) {
         event.preventDefault();
         event.stopPropagation();
+        const btn = event.currentTarget;
         const commodity = document.getElementById("commodity").value.trim();
         const state = document.getElementById("mandiState").value.trim();
         if (!commodity) {
@@ -1459,26 +1518,35 @@
             document.getElementById("commodity").focus();
             return;
         }
-        if (!state) {
+        // Need at least one source of location
+        if (!state && !navigator.geolocation) {
             showResult("mandiResult", t("result.error") + t("mandi.noState"), true);
             document.getElementById("mandiState").focus();
             return;
         }
-        const payload = { commodity, state, language: getApiLang() };
-        const btn = event.currentTarget;
-        disableBtn(btn);
-        try {
-            setLoading("mandiResult", t("mandi.fetching"));
-            const data = await apiFetch(`${BASE_URL}/api/mandi`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(payload)
-            });
-            renderMandiCard(data);
-        } catch(e) {
-            showResult("mandiResult", t("result.error") + e.message, true);
-        } finally {
-            enableBtn(btn);
+
+        if (navigator.geolocation) {
+            disableBtn(btn);
+            setLoading("mandiResult", t("mandi.nearestFinding"));
+            navigator.geolocation.getCurrentPosition(
+                (pos) => _loadNearestMandis({
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude,
+                    btn,
+                }),
+                () => {
+                    // GPS denied/timeout → fall back to selected state
+                    if (state) {
+                        _loadNearestMandis({ state, btn });
+                    } else {
+                        enableBtn(btn);
+                        showResult("mandiResult", t("result.error") + t("mandi.noState"), true);
+                    }
+                },
+                { timeout: 8000, maximumAge: 60000, enableHighAccuracy: false }
+            );
+        } else {
+            _loadNearestMandis({ state, btn });
         }
     }
 
@@ -2074,48 +2142,9 @@
         );
     }
 
-    // 4b. Mandi by location
+    // 4b. "Use my location" — same path as the GPS button so output stays consistent.
     function getMandiByLocation(event) {
-        if (event) { event.preventDefault(); event.stopPropagation(); }
-        const commodity = document.getElementById("commodity").value.trim();
-        if (!commodity) {
-            showResult("mandiResult", t("mandi.noCommodity"), true);
-            return;
-        }
-        if (!navigator.geolocation) {
-            showResult("mandiResult", t("soil.geoUnsupported"), true);
-            return;
-        }
-        const locBadge = document.getElementById("mandiDetectedLoc");
-        locBadge.classList.add("hidden");
-        setLoading("mandiResult", t("soil.detectingLocation"));
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                setLoading("mandiResult", t("mandi.fetching"));
-                try {
-                    const res = await fetch(`${BASE_URL}/api/mandi/by-location`, {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({commodity, lat: latitude, lon: longitude, language: getApiLang()})
-                    });
-                    const data = await res.json();
-                    if (data.error) {
-                        showResult("mandiResult", t("result.error") + data.error, true);
-                        return;
-                    }
-                    if (data.detected_state) {
-                        document.getElementById("mandiState").value = data.detected_state;
-                        locBadge.innerText = t("mandi.detected") + data.detected_state;
-                        locBadge.classList.remove("hidden");
-                    }
-                    renderMandiCard(data);
-                } catch(e) {
-                    showResult("mandiResult", t("result.error") + e.message, true);
-                }
-            },
-            (err) => showResult("mandiResult", t("soil.locationDenied") + err.message, true)
-        );
+        return findNearestMandis(event);
     }
 
     // ─────────────────────────────────────────

@@ -50,6 +50,30 @@ _FALLBACK_PRICE_BAND = {
 }
 
 
+def _state_centers():
+    """Average lat/lon per state, computed from MANDI_CITIES at import time.
+    Lets us answer 'nearest mandis in <state>' even when GPS is unavailable."""
+    buckets: dict = {}
+    for _m, _d, state, lat, lon in MANDI_CITIES:
+        key = _norm_state(state)
+        buckets.setdefault(key, []).append((lat, lon))
+    return {
+        k: (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
+        for k, pts in buckets.items()
+    }
+
+
+def _norm_state(s: str) -> str:
+    """Normalize state name so 'Delhi', 'NCT of Delhi', 'NCR of Delhi' all match."""
+    if not s:
+        return ""
+    out = s.strip().lower()
+    for prefix in ("nct of ", "ut of ", "state of "):
+        if out.startswith(prefix):
+            out = out[len(prefix):]
+    return out.replace(".", "").replace("&", "and").strip()
+
+
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371.0
     p1, p2 = math.radians(lat1), math.radians(lat2)
@@ -217,16 +241,38 @@ def _build_advice(commodity: str, mandis: list, language: str):
     }
 
 
-def get_nearest_mandis(commodity: str, lat: float, lon: float,
-                       language: str = "hi", limit: int = 5) -> dict:
-    """Main entry point used by the Flask route."""
+_STATE_CENTER = _state_centers()
+
+
+def get_nearest_mandis(commodity: str, lat=None, lon=None,
+                       language: str = "hi", limit: int = 5,
+                       state: str = None) -> dict:
+    """Main entry point used by the Flask route.
+
+    Either ``(lat, lon)`` OR ``state`` must be provided. When only ``state``
+    is given, the average centroid of cities in that state is used as the
+    'user location' so the same nearest-mandi pipeline can serve both the
+    GPS button and the state-dropdown button.
+    """
     commodity = (commodity or "").strip()
     if not commodity:
         return {"ok": False, "error": "commodity is required"}
-    try:
-        lat = float(lat); lon = float(lon)
-    except (TypeError, ValueError):
-        return {"ok": False, "error": "valid lat/lon are required"}
+
+    # Coerce lat/lon if provided
+    have_coords = lat is not None and lon is not None
+    if have_coords:
+        try:
+            lat = float(lat); lon = float(lon)
+        except (TypeError, ValueError):
+            have_coords = False
+
+    if not have_coords:
+        # Fallback: use the centroid of the requested state
+        center = _STATE_CENTER.get(_norm_state(state or ""))
+        if not center:
+            return {"ok": False,
+                    "error": "Provide either lat/lon (GPS) or a valid state."}
+        lat, lon = center
 
     limit = max(3, min(int(limit or 5), 8))
 

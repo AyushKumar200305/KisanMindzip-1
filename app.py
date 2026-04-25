@@ -534,6 +534,7 @@ def mandi_nearest_route():
         commodity = (data.get("commodity") or "").strip()
         lat = data.get("lat")
         lon = data.get("lon")
+        state = (data.get("state") or "").strip() or None
         language = data.get("language", "hi")
         try:
             limit = int(data.get("limit") or 5)
@@ -542,16 +543,23 @@ def mandi_nearest_route():
 
         if not commodity:
             return jsonify({"ok": False, "error": "commodity is required"}), 400
-        if lat is None or lon is None:
-            return jsonify({"ok": False, "error": "lat and lon are required"}), 400
+        if (lat is None or lon is None) and not state:
+            return jsonify({"ok": False,
+                            "error": "Provide GPS coordinates (lat, lon) or a state."}), 400
 
-        try:
-            lat_f = _safe_float(lat, "lat")
-            lon_f = _safe_float(lon, "lon")
-        except ValueError as ve:
-            return jsonify({"ok": False, "error": str(ve)}), 400
+        lat_f = lon_f = None
+        if lat is not None and lon is not None:
+            try:
+                lat_f = _safe_float(lat, "lat")
+                lon_f = _safe_float(lon, "lon")
+            except ValueError as ve:
+                return jsonify({"ok": False, "error": str(ve)}), 400
 
-        cache_key = f"mandi_near:{commodity.lower()}:{round(lat_f,2)}:{round(lon_f,2)}:{limit}"
+        if lat_f is not None:
+            cache_key = f"mandi_near:{commodity.lower()}:{round(lat_f,2)}:{round(lon_f,2)}:{limit}"
+        else:
+            cache_key = f"mandi_near:{commodity.lower()}:state={state.lower()}:{limit}"
+
         cached = _cache_get(cache_key)
         if cached is not None:
             result = dict(cached)
@@ -562,6 +570,7 @@ def mandi_nearest_route():
                 lon=lon_f,
                 language=language,
                 limit=limit,
+                state=state,
             )
             if result.get("ok"):
                 _cache_set(cache_key, result, ttl_seconds=900)  # 15 min
