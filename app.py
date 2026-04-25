@@ -156,9 +156,9 @@ def crop_doctor_route():
 @app.route("/api/disease", methods=["POST", "OPTIONS"])
 def disease_route():
     """
-    Lightweight image-upload endpoint for quick crop-disease detection.
-    Reuses the existing crop_doctor_agent so behaviour stays consistent.
-    Form fields:  image (required, multipart),  language (optional, "hi"/"en")
+    Enhanced crop-disease detection endpoint.
+    Accepts: image (required, multipart), crop (optional), language (optional "hi"/"en")
+    Returns structured fields: disease_name, cause, solution, prevention + raw diagnosis.
     """
     if request.method == "OPTIONS":
         return "", 200
@@ -170,24 +170,33 @@ def disease_route():
     if not image.filename:
         return jsonify({"error": "Empty image file"}), 400
 
-    language = request.form.get("language", "hi")
+    language  = request.form.get("language", "hi")
+    crop_name = (request.form.get("crop") or "").strip() or None
 
     image_path = f"temp_disease_{image.filename}"
     image.save(image_path)
 
     try:
-        result = crop_doctor_agent(image_path, crop_name=None, language=language)
+        result = crop_doctor_agent(
+            image_path,
+            crop_name=crop_name,
+            language=language,
+            structured=True,
+        )
     except Exception as e:
+        logger.exception("Disease detection error")
         return jsonify({"error": str(e)}), 500
     finally:
         if os.path.exists(image_path):
             os.remove(image_path)
 
-    # Normalise the field name so the frontend can render it directly.
-    diagnosis = result.get("diagnosis") or result.get("agent_advice") or ""
     return jsonify({
-        "diagnosis": diagnosis,
-        "raw": result,
+        "disease_name": result.get("disease_name", ""),
+        "cause":        result.get("cause", ""),
+        "solution":     result.get("solution", ""),
+        "prevention":   result.get("prevention", ""),
+        "diagnosis":    result.get("diagnosis", ""),
+        "crop":         result.get("crop", ""),
     })
 
 # ─────────────────────────────────────────

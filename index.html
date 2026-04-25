@@ -295,24 +295,80 @@
                 <div id="cropDoctorResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
             </div>
 
-            <!-- 3b. QUICK DISEASE SCAN (separate upload, talks to /api/disease) -->
-            <div class="bg-white rounded-xl shadow p-6 mt-4 border-l-4 border-green-500">
-                <h2 class="text-xl font-bold text-green-700 mb-2">🦠 <span data-i18n="disease.title">Quick Disease Scan</span></h2>
-                <p class="text-gray-500 text-sm mb-4" data-i18n="disease.subtitle">Just upload a leaf or crop photo — get an instant disease check.</p>
-                <div class="flex flex-col gap-3 mb-4">
+            <!-- 3b. QUICK DISEASE SCAN (enhanced) -->
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6 mt-4 border-l-4 border-green-600">
+                <h2 class="text-xl font-bold text-green-700 mb-1">🦠 <span data-i18n="disease.title">Quick Disease Scan</span></h2>
+                <p class="text-gray-500 text-sm mb-4" data-i18n="disease.subtitle">Select your crop, upload a photo — get instant diagnosis in your language.</p>
+
+                <!-- Row 1: Crop dropdown + Language toggle -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     <div>
-                        <label class="text-sm text-gray-600" data-i18n="disease.uploadLabel">Upload crop / leaf photo</label>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="disease.cropLabel">Select Crop</label>
+                        <select id="diseaseCrop"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-400 focus:outline-none bg-white">
+                            <option value="" data-i18n="disease.cropDefault">-- Select Crop (optional) --</option>
+                            <option value="Wheat">🌾 Wheat (गेहूं)</option>
+                            <option value="Rice">🌾 Rice (चावल)</option>
+                            <option value="Potato">🥔 Potato (आलू)</option>
+                            <option value="Tomato">🍅 Tomato (टमाटर)</option>
+                            <option value="Onion">🧅 Onion (प्याज)</option>
+                            <option value="Cotton">🌿 Cotton (कपास)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="disease.langLabel">Reply Language</label>
+                        <div class="flex rounded-lg border border-gray-300 overflow-hidden text-sm">
+                            <button type="button" id="diseaseLangHi"
+                                onclick="setDiseaseLang('hi')"
+                                class="flex-1 py-2 font-medium bg-green-600 text-white transition-colors">हिंदी</button>
+                            <button type="button" id="diseaseLangEn"
+                                onclick="setDiseaseLang('en')"
+                                class="flex-1 py-2 font-medium bg-white text-gray-600 hover:bg-gray-50 transition-colors">English</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instruction text (language-aware) -->
+                <p id="diseaseInstruction" class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mb-3"
+                    data-i18n="disease.instruction">Upload a clear image of the affected plant leaf</p>
+
+                <!-- Upload + preview -->
+                <div class="mb-3">
+                    <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="disease.uploadLabel">Upload crop / leaf photo</label>
+                    <label for="diseaseImage"
+                        class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-green-400 rounded-xl cursor-pointer bg-green-50 hover:bg-green-100 transition-colors">
+                        <span class="text-3xl mb-1">📷</span>
+                        <span id="diseaseFileName" class="text-sm text-green-700 font-medium">Tap to choose photo</span>
+                        <span class="text-xs text-gray-400 mt-1">JPG, PNG, WEBP supported</span>
                         <input id="diseaseImage" type="file"
                             accept="image/*,.webp,.jpg,.jpeg,.png"
-                            class="w-full border rounded p-2 mt-1"/>
-                    </div>
-                    <img id="diseasePreview" src="" alt="Preview"
-                        class="hidden w-48 h-48 object-cover rounded-lg border-2 border-green-300"/>
+                            class="hidden"/>
+                    </label>
                 </div>
+
+                <!-- Image preview -->
+                <div id="diseasePreviewWrapper" class="hidden mb-3 flex justify-center">
+                    <img id="diseasePreview" src="" alt="Preview"
+                        class="w-40 h-40 object-cover rounded-xl border-2 border-green-400 shadow"/>
+                </div>
+
+                <!-- Scan button -->
                 <button type="button" onclick="detectDisease(event)"
-                    class="w-full bg-green-700 text-white py-3 rounded-lg font-medium hover:bg-green-800"
-                    data-i18n="disease.detectBtn">Detect Disease</button>
-                <div id="diseaseResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+                    class="w-full bg-green-700 text-white py-3 rounded-xl font-semibold text-base hover:bg-green-800 active:scale-95 transition-all"
+                    data-i18n="disease.detectBtn">🔬 Scan Crop</button>
+
+                <!-- Loading animation -->
+                <div id="diseaseScanningAnim" class="hidden mt-4 flex flex-col items-center gap-2 py-4">
+                    <div class="flex gap-1">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-bounce" style="animation-delay:0s"></span>
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-bounce" style="animation-delay:.15s"></span>
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-bounce" style="animation-delay:.3s"></span>
+                    </div>
+                    <p id="diseaseScanningText" class="text-sm text-green-700 font-medium" data-i18n="disease.scanning">Scanning... please wait</p>
+                </div>
+
+                <!-- Result card -->
+                <div id="diseaseResult" class="mt-4 hidden"></div>
             </div>
         </div>
 
@@ -458,11 +514,20 @@
             "doctor.diagnosing": "Diagnosing... please wait a moment",
 
             "disease.title": "Quick Disease Scan",
-            "disease.subtitle": "Just upload a leaf or crop photo — get an instant disease check.",
+            "disease.subtitle": "Select your crop, upload a photo — get instant diagnosis in your language.",
+            "disease.cropLabel": "Select Crop",
+            "disease.cropDefault": "-- Select Crop (optional) --",
+            "disease.langLabel": "Reply Language",
             "disease.uploadLabel": "Upload crop / leaf photo",
-            "disease.detectBtn": "Detect Disease",
-            "disease.scanning": "Scanning the image... please wait",
+            "disease.instruction": "Upload a clear image of the affected plant leaf",
+            "disease.detectBtn": "🔬 Scan Crop",
+            "disease.scanning": "Scanning... please wait",
             "disease.noImage": "Please select a photo first!",
+            "disease.cardDisease": "🌿 Disease Name",
+            "disease.cardCause": "⚠️ Cause",
+            "disease.cardSolution": "💊 Solution",
+            "disease.cardPrevention": "🛡️ Prevention",
+            "disease.healthy": "No disease detected — crop appears healthy ✅",
 
             "mandi.title": "Mandi Prices",
             "mandi.subtitle": "Live mandi prices and selling advice.",
@@ -554,11 +619,20 @@
             "doctor.diagnosing": "जाँच की जा रही है... थोड़ा इंतज़ार करें",
 
             "disease.title": "त्वरित रोग जाँच",
-            "disease.subtitle": "बस पत्ती या फसल की तस्वीर अपलोड करें — तुरंत रोग की जाँच पाएँ।",
+            "disease.subtitle": "फसल चुनें, तस्वीर अपलोड करें — अपनी भाषा में तुरंत जाँच पाएँ।",
+            "disease.cropLabel": "फसल चुनें",
+            "disease.cropDefault": "-- फसल चुनें (वैकल्पिक) --",
+            "disease.langLabel": "जवाब की भाषा",
             "disease.uploadLabel": "फसल / पत्ती की तस्वीर अपलोड करें",
-            "disease.detectBtn": "रोग पहचानें",
-            "disease.scanning": "तस्वीर की जाँच हो रही है... कृपया प्रतीक्षा करें",
+            "disease.instruction": "कृपया पौधे की प्रभावित पत्ती की साफ फोटो अपलोड करें",
+            "disease.detectBtn": "🔬 फसल स्कैन करें",
+            "disease.scanning": "जांच की जा रही है... कृपया प्रतीक्षा करें",
             "disease.noImage": "पहले एक तस्वीर चुनें!",
+            "disease.cardDisease": "🌿 रोग का नाम",
+            "disease.cardCause": "⚠️ कारण",
+            "disease.cardSolution": "💊 समाधान",
+            "disease.cardPrevention": "🛡️ बचाव",
+            "disease.healthy": "कोई रोग नहीं मिला — फसल स्वस्थ दिखती है ✅",
 
             "mandi.title": "मंडी भाव",
             "mandi.subtitle": "लाइव मंडी कीमतें और बेचने की सलाह।",
@@ -826,48 +900,144 @@
         }
     });
 
-    // 3b. Quick Disease Scan — image preview
+
+    // ─────────────────────────────────────────
+    // 3b. Quick Disease Scan — enhanced
+    // ─────────────────────────────────────────
+    let diseaseLang = "hi";   // independent language state for disease scan
+
+    function setDiseaseLang(lang) {
+        diseaseLang = lang;
+        const hiBtn = document.getElementById("diseaseLangHi");
+        const enBtn = document.getElementById("diseaseLangEn");
+        if (lang === "hi") {
+            hiBtn.classList.add("bg-green-600", "text-white");
+            hiBtn.classList.remove("bg-white", "text-gray-600");
+            enBtn.classList.remove("bg-green-600", "text-white");
+            enBtn.classList.add("bg-white", "text-gray-600");
+        } else {
+            enBtn.classList.add("bg-green-600", "text-white");
+            enBtn.classList.remove("bg-white", "text-gray-600");
+            hiBtn.classList.remove("bg-green-600", "text-white");
+            hiBtn.classList.add("bg-white", "text-gray-600");
+        }
+        // Update instruction text
+        const instrEl = document.getElementById("diseaseInstruction");
+        if (instrEl) {
+            instrEl.textContent = lang === "hi"
+                ? "कृपया पौधे की प्रभावित पत्ती की साफ फोटो अपलोड करें"
+                : "Upload a clear image of the affected plant leaf";
+        }
+    }
+
+    // Image preview for disease scan
     document.getElementById("diseaseImage").addEventListener("change", function() {
         const file = this.files[0];
+        const nameEl = document.getElementById("diseaseFileName");
         if (file) {
+            if (nameEl) nameEl.textContent = file.name;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const preview = document.getElementById("diseasePreview");
+                const wrapper = document.getElementById("diseasePreviewWrapper");
                 preview.src = e.target.result;
-                preview.classList.remove("hidden");
+                wrapper?.classList.remove("hidden");
             };
             reader.readAsDataURL(file);
         }
     });
 
-    // 3b. Quick Disease Scan — call /api/disease and show result below upload
+    function showDiseaseCard(data) {
+        const resultEl = document.getElementById("diseaseResult");
+        resultEl.classList.remove("hidden");
+
+        const isEn = diseaseLang === "en";
+        const diseaseName = data.disease_name || data.diagnosis || "";
+        const cause      = data.cause || "";
+        const solution   = data.solution || "";
+        const prevention = data.prevention || "";
+
+        // If no structured fields, fall back to a plain text bubble
+        if (!cause && !solution && !prevention) {
+            resultEl.innerHTML = `
+                <div class="p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-900 whitespace-pre-wrap">
+                    ${escapeHtml(diseaseName || t("disease.healthy"))}
+                </div>`;
+            speakReply(diseaseName);
+            return;
+        }
+
+        const labelDisease = isEn ? "🌿 Disease Name"  : "🌿 रोग का नाम";
+        const labelCause   = isEn ? "⚠️ Cause"         : "⚠️ कारण";
+        const labelSol     = isEn ? "💊 Solution"       : "💊 समाधान";
+        const labelPrev    = isEn ? "🛡️ Prevention"    : "🛡️ बचाव";
+
+        function row(label, value, colorClass) {
+            if (!value) return "";
+            return `
+                <div class="rounded-xl border ${colorClass} p-3">
+                    <p class="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">${label}</p>
+                    <p class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(value)}</p>
+                </div>`;
+        }
+
+        resultEl.innerHTML = `
+            <div class="space-y-2">
+                ${row(labelDisease, diseaseName,  "border-green-300 bg-green-50 text-green-900")}
+                ${row(labelCause,   cause,         "border-yellow-300 bg-yellow-50 text-yellow-900")}
+                ${row(labelSol,     solution,      "border-blue-300 bg-blue-50 text-blue-900")}
+                ${row(labelPrev,    prevention,    "border-purple-300 bg-purple-50 text-purple-900")}
+                <div class="flex justify-end">
+                    <button type="button"
+                        onclick="speakReply(${JSON.stringify(diseaseName + '. ' + cause + '. ' + solution)})"
+                        class="bg-white border border-green-600 text-green-700 px-3 py-1 rounded text-xs hover:bg-green-50">
+                        🔊 Sunें / Listen
+                    </button>
+                </div>
+            </div>`;
+
+        speakReply(diseaseName + ". " + cause);
+    }
+
     async function detectDisease(event) {
         if (event) { event.preventDefault(); event.stopPropagation(); }
 
         const imageFile = document.getElementById("diseaseImage").files[0];
         if (!imageFile) {
-            showResult("diseaseResult", t("disease.noImage"), true);
+            const resultEl = document.getElementById("diseaseResult");
+            resultEl.classList.remove("hidden");
+            resultEl.innerHTML = `<div class="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">${escapeHtml(t("disease.noImage"))}</div>`;
             return;
         }
 
+        const cropVal = document.getElementById("diseaseCrop").value;
+
         const formData = new FormData();
         formData.append("image", imageFile);
-        formData.append("language", getApiLang());
+        formData.append("language", diseaseLang);
+        if (cropVal) formData.append("crop", cropVal);
 
         const btn = event?.currentTarget;
         disableBtn(btn);
+
+        // Show bouncing dots animation
+        document.getElementById("diseaseScanningAnim").classList.remove("hidden");
+        document.getElementById("diseaseScanningText").textContent = t("disease.scanning");
+        document.getElementById("diseaseResult").classList.add("hidden");
+
         try {
-            setLoading("diseaseResult", t("disease.scanning"));
             const data = await apiFetch(`${BASE_URL}/api/disease`, {
                 method: "POST",
                 body: formData
             });
-            const output = data.diagnosis || JSON.stringify(data);
-            showResult("diseaseResult", output);
+            showDiseaseCard(data);
         } catch(e) {
-            showResult("diseaseResult", t("result.error") + e.message, true);
+            const resultEl = document.getElementById("diseaseResult");
+            resultEl.classList.remove("hidden");
+            resultEl.innerHTML = `<div class="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">${escapeHtml(t("result.error") + e.message)}</div>`;
         } finally {
             enableBtn(btn);
+            document.getElementById("diseaseScanningAnim").classList.add("hidden");
         }
     }
 
