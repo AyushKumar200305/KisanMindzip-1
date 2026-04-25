@@ -64,36 +64,14 @@ def _request_lang() -> str:
 
 
 def _friendly_error(exc: Exception, lang: str | None = None) -> str:
-    """Translate raw upstream errors (Groq 401, network, etc.) into a
-    short, bilingual message that's safe to show to farmers."""
+    """Bilingual, safe-to-show message for every upstream/system failure
+    (Groq 401, OpenWeather 401, quota, network, parse errors, etc.).
+    The user never sees raw exception strings."""
     if lang is None:
         lang = _request_lang()
-    msg = str(exc).lower()
-
-    auth_markers = ("invalid api key", "invalid_api_key",
-                    "401", "unauthorized", "missing api key")
-    quota_markers = ("rate limit", "quota", "429", "too many requests",
-                     "insufficient_quota")
-    network_markers = ("timeout", "timed out", "connection",
-                       "network", "name or service not known")
-
-    if any(m in msg for m in auth_markers):
-        return ("AI service is not configured yet. Please ask the admin "
-                "to add the GROQ_API_KEY in Replit Secrets."
-                if lang == "en" else
-                "AI सेवा अभी सेट नहीं है। कृपया एडमिन से कहें कि "
-                "Replit Secrets में GROQ_API_KEY जोड़ें।")
-    if any(m in msg for m in quota_markers):
-        return ("AI service is busy right now. Please try again in a minute."
-                if lang == "en" else
-                "AI सेवा अभी व्यस्त है। कृपया एक मिनट बाद फिर कोशिश करें।")
-    if any(m in msg for m in network_markers):
-        return ("Network problem reaching the AI service. Please try again."
-                if lang == "en" else
-                "AI सेवा तक नेटवर्क नहीं पहुँच रहा। कृपया फिर कोशिश करें।")
-    return ("Service error — please try again."
+    return ("Service temporarily unavailable. Please try again later."
             if lang == "en" else
-            "सेवा में समस्या — कृपया फिर कोशिश करें।")
+            "सेवा अस्थायी रूप से उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।")
 
 # ─────────────────────────────────────────
 # 1. SOIL SENSE AGENT
@@ -316,10 +294,12 @@ def mandi_by_location_route():
         )
         result["detected_state"] = state
         return jsonify(result)
-    except requests.RequestException as e:
-        return jsonify({"error": f"Location service unreachable: {e}"}), 502
+    except requests.RequestException:
+        logger.exception("Mandi-by-location: upstream unreachable")
+        return jsonify({"error": _friendly_error(Exception("network"))}), 503
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Mandi-by-location: unexpected error")
+        return jsonify({"error": _friendly_error(e)}), 500
 
 # ─────────────────────────────────────────
 # 6. WEATHER (OpenWeather)
@@ -329,8 +309,16 @@ def weather_route():
     if request.method == "OPTIONS":
         return "", 200
 
+    lang = _request_lang()
+    weather_unavailable = ("Weather data temporarily unavailable."
+                           if lang == "en" else
+                           "मौसम डेटा अभी उपलब्ध नहीं है।")
+    invalid_loc = ("Invalid location. Please enter a valid city."
+                   if lang == "en" else
+                   "स्थान मान्य नहीं है। कृपया सही शहर दर्ज करें।")
+
     if not OPENWEATHER_API_KEY:
-        return jsonify({"error": "OPENWEATHER_API_KEY is not configured on the server."}), 500
+        return jsonify({"error": weather_unavailable}), 503
 
     # Accept lat/lon or city from either JSON body or query params
     data = request.get_json(silent=True) or {}
@@ -347,7 +335,7 @@ def weather_route():
         params["q"] = city
         cache_key = f"weather:city:{city.lower().strip()}"
     else:
-        return jsonify({"error": "Provide either {lat, lon} or {city}."}), 400
+        return jsonify({"error": invalid_loc}), 400
 
     cached = _cache_get(cache_key)
     if cached:
@@ -360,7 +348,13 @@ def weather_route():
             params=params, timeout=10
         ).json()
         if str(cur.get("cod")) != "200":
-            return jsonify({"error": cur.get("message", "Weather lookup failed")}), 400
+            # Treat city-not-found and other lookup misses as invalid location;
+            # everything else (401, 5xx, etc.) as a transient outage.
+            cod = str(cur.get("cod"))
+            if cod in ("404", "400"):
+                return jsonify({"error": invalid_loc}), 400
+            logger.warning("Weather upstream non-200: %s", cur)
+            return jsonify({"error": weather_unavailable}), 503
 
         # Short-term forecast (next 24h, 3-hour steps) for rain prediction
         fc = requests.get(
@@ -413,11 +407,12 @@ def weather_route():
         }
         _cache_set(cache_key, result, ttl_seconds=600)  # 10-min weather cache
         return jsonify(result)
-    except requests.RequestException as e:
-        return jsonify({"error": f"Weather service unreachable: {e}"}), 502
-    except Exception as e:
+    except requests.RequestException:
+        logger.exception("Weather service unreachable")
+        return jsonify({"error": weather_unavailable}), 503
+    except Exception:
         logger.exception("Weather route error")
-        return jsonify({"error": _friendly_error(e)}), 500
+        return jsonify({"error": weather_unavailable}), 500
 
 # ─────────────────────────────────────────
 # 7. SOIL INFO BY LOCATION (OpenWeather + SoilGrids)

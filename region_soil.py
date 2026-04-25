@@ -25,11 +25,6 @@ def _load_data() -> dict:
 
 _DATA = _load_data()
 
-# Safe fallback when we can't resolve a city or location to a known state.
-# Uttar Pradesh has the largest farmer base, so its state-level advice is a
-# reasonable default and keeps the response useful instead of empty.
-_DEFAULT_STATE_KEY = "uttar pradesh"
-
 
 def _norm(s: str) -> str:
     return (s or "").strip().lower()
@@ -77,23 +72,9 @@ def _translate_crop_list(slugs, lang):
     return out
 
 
-_NOTICES = {
-    "city_not_found": {
-        "en": "City not found in database. Showing state-level recommendations for {state}.",
-        "hi": "यह शहर हमारी सूची में नहीं है। {state} की राज्य-स्तरीय सिफारिशें दिखाई जा रही हैं।",
-    },
-    "geo_state_unmatched": {
-        "en": "Could not match your state to our dataset. Showing recommendations for {state}.",
-        "hi": "आपके राज्य का मिलान नहीं हो पाया। {state} की सिफारिशें दिखाई जा रही हैं।",
-    },
-    "geo_unavailable": {
-        "en": "Location service unavailable right now. Showing recommendations for {state} — you can type your city for exact data.",
-        "hi": "लोकेशन सेवा फिलहाल उपलब्ध नहीं है। {state} की सिफारिशें दिखाई जा रही हैं — सटीक जानकारी के लिए शहर लिखें।",
-    },
-    "no_input": {
-        "en": "No city or location provided. Showing default recommendations for {state}.",
-        "hi": "कोई शहर या लोकेशन नहीं दी गई। {state} की डिफ़ॉल्ट सिफारिशें दिखाई जा रही हैं।",
-    },
+_INVALID_LOCATION = {
+    "en": "Invalid location. Please enter a valid city.",
+    "hi": "स्थान मान्य नहीं है। कृपया सही शहर दर्ज करें।",
 }
 
 
@@ -130,27 +111,27 @@ def _build_response(state_key: str, city_display: str, language: str,
     }
 
 
-def _fallback_response(language: str, notice_key: str,
-                       city_display: str = "") -> dict:
-    """Always-useful response built from the default state."""
+def _invalid_location_response(language: str) -> dict:
+    """Strict error response when location can't be resolved.
+    Per product spec we do NOT show automatic state-level fallback."""
     lang = _pick_lang(language)
-    default_state_name = _DATA["states"][_DEFAULT_STATE_KEY]["name"][lang]
-    notice = _NOTICES[notice_key][lang].format(state=default_state_name)
-    return _build_response(_DEFAULT_STATE_KEY, city_display, language, notice)
+    return {"ok": False, "error": _INVALID_LOCATION[lang]}
 
 
 def region_soil_advice(city: Optional[str] = None,
                        lat=None, lon=None,
                        language: str = "hi") -> dict:
-    """Main entry point. Always returns a successful, useful response —
-    never blocks the farmer with a hard error."""
+    """Main entry point. Returns matched state advice when the city or GPS
+    coordinates resolve to a known Indian state. If we can't resolve the
+    location, returns a clean ok:false error so the UI can prompt the
+    farmer to re-enter a valid city — no silent state-level fallback."""
 
     # 1) City path
     if city and str(city).strip():
         state_key = _resolve_city_to_state(city)
         if state_key and state_key in _DATA["states"]:
             return _build_response(state_key, city.strip(), language, notice="")
-        # Unknown city → still try GPS if available, else default-state fallback
+        # Unknown city → try GPS if also provided, else error out cleanly
         if lat is not None and lon is not None:
             geo = _reverse_geocode_state(lat, lon)
             if geo:
@@ -159,8 +140,7 @@ def region_soil_advice(city: Optional[str] = None,
                 if gk and gk in _DATA["states"]:
                     return _build_response(gk, city_name or city.strip(),
                                            language, notice="")
-        return _fallback_response(language, "city_not_found",
-                                  city_display=city.strip())
+        return _invalid_location_response(language)
 
     # 2) GPS-only path
     if lat is not None and lon is not None:
@@ -171,9 +151,7 @@ def region_soil_advice(city: Optional[str] = None,
             if state_key and state_key in _DATA["states"]:
                 return _build_response(state_key, city_name or state_raw,
                                        language, notice="")
-            return _fallback_response(language, "geo_state_unmatched",
-                                      city_display=city_name or "")
-        return _fallback_response(language, "geo_unavailable")
+        return _invalid_location_response(language)
 
     # 3) No input at all
-    return _fallback_response(language, "no_input")
+    return _invalid_location_response(language)
