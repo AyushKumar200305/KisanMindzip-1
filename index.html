@@ -679,6 +679,45 @@
     </div>
 
 <script>
+    // ─────────────────────────────────────────
+    // GLOBAL SAFETY NET — never let an uncaught error blank the page
+    // (critical for live presentations / demos)
+    // ─────────────────────────────────────────
+    (function installGlobalSafetyNet() {
+        function showErrorToast(msg) {
+            try {
+                let toast = document.getElementById("__kmErrorToast");
+                if (!toast) {
+                    toast = document.createElement("div");
+                    toast.id = "__kmErrorToast";
+                    toast.style.cssText =
+                        "position:fixed;bottom:16px;left:50%;transform:translateX(-50%);" +
+                        "background:#fef2f2;color:#991b1b;border:1px solid #fecaca;" +
+                        "padding:8px 14px;border-radius:9999px;font-size:13px;z-index:99999;" +
+                        "box-shadow:0 4px 12px rgba(0,0,0,.12);max-width:90vw;text-align:center;" +
+                        "transition:opacity .3s;";
+                    document.body && document.body.appendChild(toast);
+                }
+                toast.textContent = "⚠️ " + (msg || "Something went wrong, please try again.");
+                toast.style.opacity = "1";
+                clearTimeout(toast._t);
+                toast._t = setTimeout(() => { toast.style.opacity = "0"; }, 4000);
+            } catch(_) { /* never throw from the safety net */ }
+        }
+        window.addEventListener("error", function(e) {
+            try { console.warn("[KM safety-net] error:", e && e.message); } catch(_) {}
+            showErrorToast("A small glitch was caught — the app is still running.");
+            return true; // prevent default browser error UI
+        });
+        window.addEventListener("unhandledrejection", function(e) {
+            try { console.warn("[KM safety-net] unhandled promise:", e && (e.reason && e.reason.message || e.reason)); } catch(_) {}
+            showErrorToast("Network hiccup — please try again.");
+            try { e.preventDefault(); } catch(_) {}
+        });
+        // Expose for renderers / handlers to use
+        window.__kmToast = showErrorToast;
+    })();
+
     const BASE_URL = "";
     let currentTab = "soil";
 
@@ -1820,37 +1859,49 @@
 
     function renderRegionResult(data) {
         const box = document.getElementById("regionResult");
-        box.classList.remove("hidden");
+        try {
+            box.classList.remove("hidden");
+            data = data || {};
 
-        const listOrDash = (arr) =>
-            (arr && arr.length)
-                ? `<ul class="list-disc list-inside text-sm text-gray-800 space-y-0.5">
-                       ${arr.map(c => `<li>${escapeHtml(c)}</li>`).join("")}
-                   </ul>`
-                : `<span class="text-gray-400 text-sm">${t("region.none")}</span>`;
+            const safe = (v, fallback) => (v == null || v === "") ? (fallback || "—") : v;
 
-        const card = (title, body, accent) => `
-            <div class="rounded-lg border ${accent} p-3 bg-white">
-                <div class="text-xs font-semibold text-gray-600 mb-1">${escapeHtml(title)}</div>
-                <div>${body}</div>
-            </div>`;
+            const listOrDash = (arr) =>
+                (Array.isArray(arr) && arr.length)
+                    ? `<ul class="list-disc list-inside text-sm text-gray-800 space-y-0.5">
+                           ${arr.map(c => `<li>${escapeHtml(c)}</li>`).join("")}
+                       </ul>`
+                    : `<span class="text-gray-400 text-sm">${t("region.none")}</span>`;
 
-        box.innerHTML = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                ${card(t("region.cardLocation"),
-                       `<div class="text-base font-semibold text-green-800">${escapeHtml(data.location)}</div>`,
-                       "border-green-200")}
-                ${card(t("region.cardSoil"),
-                       `<div class="text-base font-semibold text-amber-800">${escapeHtml(data.soil)}</div>`,
-                       "border-amber-200")}
-                ${card(t("region.cardKharif"), listOrDash(data.kharif), "border-green-200")}
-                ${card(t("region.cardRabi"),   listOrDash(data.rabi),   "border-emerald-200")}
-                ${card(t("region.cardZaid"),   listOrDash(data.zaid),   "border-yellow-200")}
-                ${card(t("region.cardAdvice"),
-                       `<div class="text-sm text-gray-800 leading-relaxed">${escapeHtml(data.advice)}</div>`,
-                       "border-blue-200")}
-            </div>
-        `;
+            const card = (title, body, accent) => `
+                <div class="rounded-lg border ${accent} p-3 bg-white">
+                    <div class="text-xs font-semibold text-gray-600 mb-1">${escapeHtml(title)}</div>
+                    <div>${body}</div>
+                </div>`;
+
+            box.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    ${card(t("region.cardLocation"),
+                           `<div class="text-base font-semibold text-green-800">${escapeHtml(safe(data.location))}</div>`,
+                           "border-green-200")}
+                    ${card(t("region.cardSoil"),
+                           `<div class="text-base font-semibold text-amber-800">${escapeHtml(safe(data.soil))}</div>`,
+                           "border-amber-200")}
+                    ${card(t("region.cardKharif"), listOrDash(data.kharif), "border-green-200")}
+                    ${card(t("region.cardRabi"),   listOrDash(data.rabi),   "border-emerald-200")}
+                    ${card(t("region.cardZaid"),   listOrDash(data.zaid),   "border-yellow-200")}
+                    ${card(t("region.cardAdvice"),
+                           `<div class="text-sm text-gray-800 leading-relaxed">${escapeHtml(safe(data.advice, t("result.empty")))}</div>`,
+                           "border-blue-200")}
+                </div>
+            `;
+        } catch(e) {
+            try {
+                console.warn("[renderRegionResult] failed:", e);
+                box.className = "mt-3 text-sm text-red-700 bg-red-50 rounded p-3";
+                box.classList.remove("hidden");
+                box.innerText = t("result.error") + (e && e.message ? e.message : "render failed");
+            } catch(_) {}
+        }
     }
 
     async function _fetchRegion(payload, btn) {
