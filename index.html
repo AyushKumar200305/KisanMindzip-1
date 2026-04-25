@@ -2052,12 +2052,24 @@
     let _micTarget = { inputId: "chatInput", btnId: "micBtn", statusId: "micStatus" };
 
     function setVoiceLang(lang) {
+        const prev = voiceLang;
         voiceLang = lang;
         if (recognition) recognition.lang = lang;
         // Stop any in-progress speech so the next reply uses the new language
         try { window.speechSynthesis.cancel(); } catch(e) {}
+        _clearVoiceAutoStop && _clearVoiceAutoStop();
+        _hideStopVoiceFab && _hideStopVoiceFab();
         // Re-render the entire UI in the newly chosen language
         applyI18n();
+        // Reset the chat conversation so the bot replies in the new language
+        // (otherwise the prior history keeps it answering in the old language).
+        const prevLang = (prev || "").startsWith("en") ? "en" : "hi";
+        const newLang  = (lang || "").startsWith("en") ? "en" : "hi";
+        if (prevLang !== newLang) {
+            try { fetch(`${BASE_URL}/api/chat/reset`, {method: "POST"}); } catch(_) {}
+            const chatDiv = document.getElementById("chatMessages");
+            if (chatDiv) chatDiv.innerHTML = "";
+        }
     }
 
     function showMicStatus(text, show=true, statusId) {
