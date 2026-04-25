@@ -613,6 +613,7 @@
             "region.cardZaid": "🌻 Zaid (Summer) Crops",
             "region.cardAdvice": "💡 Practical Advice",
             "region.none": "—",
+            "region.gpsManualFallback": "Couldn't read your location. Please enter your city manually.",
 
             "chat.title": "Kisan Chatbot",
             "chat.subtitle": "Ask anything about farming — answers in your selected language.",
@@ -734,6 +735,7 @@
             "region.cardZaid": "🌻 ज़ायद (गर्मी) फसलें",
             "region.cardAdvice": "💡 व्यावहारिक सलाह",
             "region.none": "—",
+            "region.gpsManualFallback": "लोकेशन नहीं मिली। कृपया अपना शहर लिखें।",
 
             "chat.title": "किसान चैटबोट",
             "chat.subtitle": "खेती से जुड़ा कोई भी सवाल पूछें — आपकी चुनी हुई भाषा में जवाब मिलेगा।",
@@ -1348,11 +1350,11 @@
 
     function getRegionAdviceByGPS(event) {
         if (event) { event.preventDefault(); event.stopPropagation(); }
+        const btn = (event && event.currentTarget) ? event.currentTarget : null;
         if (!navigator.geolocation) {
-            showRegionNote(t("soil.geoUnsupported"), "error");
+            showRegionNote(t("region.gpsManualFallback"), "info");
             return;
         }
-        const btn = (event && event.currentTarget) ? event.currentTarget : null;
         showRegionNote(t("region.locating"), "info");
         if (btn) disableBtn(btn);
         navigator.geolocation.getCurrentPosition(
@@ -1362,8 +1364,12 @@
             },
             (err) => {
                 if (btn) enableBtn(btn);
-                showRegionNote(t("soil.locationDenied") + err.message, "error");
-            }
+                // Permission denied / unavailable / timeout — always degrade
+                // gracefully: show a friendly note in the user's language
+                // instead of a generic browser error.
+                showRegionNote(t("region.gpsManualFallback"), "info");
+            },
+            { timeout: 10000, maximumAge: 60000 }
         );
     }
 
