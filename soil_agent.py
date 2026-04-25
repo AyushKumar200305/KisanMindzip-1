@@ -2,7 +2,7 @@ import os
 from groq import Groq
 from predict import predict_crop
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "missing")
 
 def soil_sense_agent(N, P, K, temperature, humidity, ph, rainfall):
     # Step 1: Get crop from ML model

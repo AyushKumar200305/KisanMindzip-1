@@ -2,7 +2,7 @@ import os
 import requests
 from groq import Groq
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "missing")
 DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY", "")
 
 def get_mandi_prices(commodity, state):

@@ -1,7 +1,7 @@
 import os
 from groq import Groq
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "missing")
 
 # Store conversation history for memory
 conversation_history = []
