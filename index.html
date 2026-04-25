@@ -63,6 +63,13 @@
             <div class="bg-white rounded-xl shadow p-6">
                 <h2 class="text-xl font-bold text-green-700 mb-2">🌱 Soil Sense Agent</h2>
                 <p class="text-gray-500 text-sm mb-4">Mitti ki jaankari do — best crop, khaad aur sinchai schedule milega</p>
+                <div class="flex justify-end mb-3">
+                    <button type="button" onclick="autofillSoilFromLocation(event)"
+                        class="bg-white border border-green-600 text-green-700 px-3 py-1 rounded text-sm hover:bg-green-50">
+                        📍 Auto-fill from my location
+                    </button>
+                </div>
+                <p id="soilAutofillNote" class="text-xs text-gray-500 mb-2 hidden"></p>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div>
                         <label class="text-sm text-gray-600">Nitrogen (N)</label>
@@ -368,6 +375,71 @@
         } catch(e) {
             showResult("mandiResult", "Error: " + e.message, true);
         }
+    }
+
+    // ─────────────────────────────────────────
+    // SOIL — Auto-fill from location (OpenWeather + SoilGrids)
+    // ─────────────────────────────────────────
+    function showSoilNote(text, type="info") {
+        const el = document.getElementById("soilAutofillNote");
+        el.classList.remove("hidden");
+        const colors = {
+            info:  "text-gray-600 bg-gray-50",
+            warn:  "text-yellow-700 bg-yellow-50",
+            ok:    "text-green-700 bg-green-50",
+            error: "text-red-700 bg-red-50"
+        };
+        el.className = `text-xs mb-2 p-2 rounded ${colors[type] || colors.info}`;
+        el.innerText = text;
+    }
+
+    function autofillSoilFromLocation(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        if (!navigator.geolocation) {
+            showSoilNote("Geolocation not supported in this browser.", "error");
+            return;
+        }
+        showSoilNote("📍 Aapki location detect ho rahi hai...", "info");
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                showSoilNote("⏳ Mausam aur mitti ki jaankari fetch ho rahi hai...", "info");
+                try {
+                    const res = await fetch(
+                        `${BASE_URL}/api/soil-info?lat=${latitude}&lon=${longitude}`
+                    );
+                    const data = await res.json();
+                    if (data.error) {
+                        showSoilNote("Error: " + data.error, "error");
+                        return;
+                    }
+                    // Fill fields if we got values
+                    const setVal = (id, v) => {
+                        if (v !== undefined && v !== null) {
+                            document.getElementById(id).value = v;
+                        }
+                    };
+                    setVal("N", data.N);
+                    setVal("P", data.P);
+                    setVal("K", data.K);
+                    setVal("temperature", data.temperature);
+                    setVal("humidity", data.humidity);
+                    setVal("ph", data.ph);
+                    setVal("rainfall", data.rainfall);
+
+                    const realFields = [];
+                    if (data.source && data.source.weather) realFields.push("temperature, humidity");
+                    if (data.source && data.source.ph) realFields.push("pH");
+                    const realPart = realFields.length
+                        ? `✅ Real data: ${realFields.join(", ")}. `
+                        : "";
+                    showSoilNote(realPart + (data.notes || ""), "ok");
+                } catch (e) {
+                    showSoilNote("Error: " + e.message, "error");
+                }
+            },
+            (err) => showSoilNote("Location denied: " + err.message, "error")
+        );
     }
 
     // ─────────────────────────────────────────

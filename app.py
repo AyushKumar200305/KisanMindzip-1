@@ -215,6 +215,74 @@ def weather_route():
         return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────
+# 7. SOIL INFO BY LOCATION (OpenWeather + SoilGrids)
+# ─────────────────────────────────────────
+@app.route("/api/soil-info", methods=["GET", "POST", "OPTIONS"])
+def soil_info_route():
+    if request.method == "OPTIONS":
+        return "", 200
+
+    data = request.get_json(silent=True) or {}
+    lat = data.get("lat") or request.args.get("lat")
+    lon = data.get("lon") or request.args.get("lon")
+    if not (lat and lon):
+        return jsonify({"error": "Provide lat and lon"}), 400
+
+    result = {
+        "source": {},
+        "notes": "Temperature, humidity aur pH real data hain. N/P/K aur rainfall typical Indian averages hain — apne soil test ke hisaab se adjust karein."
+    }
+
+    # 1) Weather → temperature + humidity (real-time)
+    try:
+        if OPENWEATHER_API_KEY:
+            w = requests.get(
+                "https://api.openweathermap.org/data/2.5/weather",
+                params={"lat": lat, "lon": lon, "units": "metric",
+                        "appid": OPENWEATHER_API_KEY},
+                timeout=10
+            ).json()
+            if str(w.get("cod")) == "200":
+                result["temperature"] = w.get("main", {}).get("temp")
+                result["humidity"] = w.get("main", {}).get("humidity")
+                result["source"]["weather"] = "OpenWeather"
+    except requests.RequestException:
+        pass
+
+    # 2) SoilGrids (ISRIC) → real pH at 0-5 cm
+    try:
+        sg = requests.get(
+            "https://rest.isric.org/soilgrids/v2.0/properties/query",
+            params=[("lon", lon), ("lat", lat),
+                    ("property", "phh2o"), ("depth", "0-5cm"),
+                    ("value", "mean")],
+            timeout=15
+        ).json()
+        layers = (sg.get("properties") or {}).get("layers", [])
+        for layer in layers:
+            depths = layer.get("depths") or []
+            if not depths:
+                continue
+            mean = (depths[0].get("values") or {}).get("mean")
+            if mean is None:
+                continue
+            d_factor = (layer.get("unit_measure") or {}).get("d_factor", 1) or 1
+            if layer.get("name") == "phh2o":
+                # phh2o is reported as pH * 10
+                result["ph"] = round(mean / d_factor, 2)
+                result["source"]["ph"] = "SoilGrids (ISRIC)"
+    except requests.RequestException:
+        pass
+
+    # 3) Sensible Indian-average estimates for fields with no free location API
+    result.setdefault("N", 80)
+    result.setdefault("P", 40)
+    result.setdefault("K", 40)
+    result.setdefault("rainfall", 200)
+
+    return jsonify(result)
+
+# ─────────────────────────────────────────
 # HEALTH CHECK
 # ─────────────────────────────────────────
 @app.route("/health", methods=["GET"])
