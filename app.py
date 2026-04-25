@@ -305,6 +305,91 @@ def disease_route():
 # ─────────────────────────────────────────
 # 4. MANDI BHAV AGENT
 # ─────────────────────────────────────────
+
+# Per-commodity price thresholds in ₹/quintal (modal price)
+_PRICE_THRESHOLDS = {
+    "wheat":     (2000, 2400),
+    "rice":      (2200, 2800),
+    "paddy":     (2000, 2500),
+    "tomato":    (1500, 2500),
+    "onion":     (1500, 2500),
+    "potato":    (1000, 1800),
+    "cotton":    (5500, 7000),
+    "maize":     (1700, 2200),
+    "soyabean":  (3800, 4800),
+    "soybean":   (3800, 4800),
+    "mustard":   (4500, 5800),
+    "groundnut": (5500, 7000),
+    "bajra":     (1900, 2400),
+    "jowar":     (2500, 3200),
+}
+
+_PRICE_INSIGHT_MSG = {
+    "high":   ("📈 Good time to sell your crop — prices are strong.",
+               "📈 बेचने का अच्छा समय — कीमतें अच्छी हैं।"),
+    "low":    ("📉 Prices are low — consider waiting if possible.",
+               "📉 कीमतें कम हैं — हो सके तो थोड़ा इंतज़ार करें।"),
+    "medium": ("➡️ Prices are average — sell if you need cash, otherwise watch the trend.",
+               "➡️ कीमतें सामान्य हैं — ज़रूरत हो तो बेचें, वरना भाव पर नज़र रखें।"),
+}
+
+
+def _to_float(v):
+    try:
+        return float(str(v).replace(",", "").strip())
+    except Exception:
+        return None
+
+
+def _build_price_insight(commodity: str, records: list):
+    """Compute a simple high/medium/low insight from live mandi records."""
+    if not records:
+        return None
+
+    modals, best_market = [], None
+    best_price = -1.0
+    for r in records:
+        v = _to_float(r.get("modal_price"))
+        if v and v > 0:
+            modals.append(v)
+            if v > best_price:
+                best_price = v
+                best_market = r.get("market") or r.get("district") or ""
+    if not modals:
+        return None
+
+    avg = sum(modals) / len(modals)
+    worst = min(modals)
+    key = (commodity or "").strip().lower()
+    thr = _PRICE_THRESHOLDS.get(key)
+
+    if thr:
+        low_thr, high_thr = thr
+        if avg >= high_thr:
+            level = "high"
+        elif avg <= low_thr:
+            level = "low"
+        else:
+            level = "medium"
+    else:
+        if best_price >= avg * 1.10:
+            level = "high"
+        elif worst <= avg * 0.90:
+            level = "low"
+        else:
+            level = "medium"
+
+    en, hi = _PRICE_INSIGHT_MSG[level]
+    return {
+        "level":         level,
+        "best_price":    best_price,
+        "best_market":   best_market or "",
+        "average_price": round(avg, 2),
+        "message_en":    en,
+        "message_hi":    hi,
+    }
+
+
 @app.route("/api/mandi", methods=["POST", "OPTIONS"])
 def mandi_route():
     if request.method == "OPTIONS":
@@ -325,6 +410,7 @@ def mandi_route():
             return jsonify(cached)
 
         result = mandi_bhav_agent(commodity=commodity, state=state, language=language)
+        result["price_insight"] = _build_price_insight(commodity, result.get("live_prices") or [])
         _cache_set(cache_key, result, ttl_seconds=1800)  # 30-min cache
         return jsonify(result)
     except Exception as e:
@@ -401,6 +487,7 @@ def mandi_by_location_route():
             language=data.get("language", "hi")
         )
         result["detected_state"] = state
+        result["price_insight"] = _build_price_insight(commodity, result.get("live_prices") or [])
         return jsonify(result)
     except requests.RequestException:
         logger.exception("Mandi-by-location: upstream unreachable")
