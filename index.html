@@ -10,9 +10,17 @@
 
     <!-- Header -->
     <header class="bg-green-800 text-white py-4 px-6 shadow-lg">
-        <div class="max-w-5xl mx-auto flex items-center justify-between">
+        <div class="max-w-5xl mx-auto flex items-center justify-between gap-3 flex-wrap">
             <h1 class="text-2xl font-bold">🌾 KisanMind</h1>
-            <p class="text-green-200 text-sm">AI-Powered Farmer Assistant</p>
+            <div class="flex items-center gap-3">
+                <p class="text-green-200 text-sm hidden sm:block">AI-Powered Farmer Assistant</p>
+                <select id="langToggle" onchange="setVoiceLang(this.value)"
+                        title="Voice language / आवाज़ की भाषा"
+                        class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 cursor-pointer">
+                    <option value="hi-IN">🗣️ हिंदी</option>
+                    <option value="en-IN">🗣️ English</option>
+                </select>
+            </div>
         </div>
     </header>
 
@@ -78,13 +86,20 @@
                 <h2 class="text-xl font-bold text-green-700 mb-2">💬 Kisan Chatbot</h2>
                 <p class="text-gray-500 text-sm mb-4">Farming ke baare mein kuch bhi poochho — Hindi/Hinglish mein jawab milega</p>
                 <div id="chatMessages" class="h-64 overflow-y-auto bg-green-50 rounded-lg p-3 mb-3 space-y-3"></div>
-                <div class="flex gap-2">
-                    <input id="chatInput" type="text" placeholder="Apna sawaal likho..."
-                        class="border rounded-lg p-2 flex-1"
+                <div class="flex gap-2 flex-wrap">
+                    <input id="chatInput" type="text" placeholder="Apna sawaal likho ya 🎤 dabao..."
+                        class="border rounded-lg p-2 flex-1 min-w-[140px]"
                         onkeypress="if(event.key==='Enter') testChat(event)"/>
+                    <button type="button" id="micBtn" onclick="toggleMic(event)"
+                        title="Bolkar likho / Speak to type"
+                        class="bg-white border border-green-600 text-green-700 px-3 py-2 rounded-lg hover:bg-green-50">🎤</button>
+                    <button type="button" id="speakerBtn" onclick="toggleSpeaker(event)"
+                        title="Jawab sun-na on/off / Read replies aloud"
+                        class="bg-white border border-green-600 text-green-700 px-3 py-2 rounded-lg hover:bg-green-50">🔈</button>
                     <button type="button" onclick="testChat(event)" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700">Send</button>
                     <button type="button" onclick="resetChat(event)" class="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Reset</button>
                 </div>
+                <p id="micStatus" class="text-xs text-gray-500 mt-2 hidden"></p>
             </div>
         </div>
 
@@ -253,6 +268,7 @@
                     <span class="bg-white border px-3 py-2 rounded-lg text-sm max-w-xs">${data.reply}</span>
                 </div>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
+            speakReply(data.reply);
         } catch(e) {
             chatDiv.innerHTML += `<div class="text-red-500 text-sm">Error: ${e.message}</div>`;
         }
@@ -331,6 +347,116 @@
         } catch(e) {
             showResult("mandiResult", "Error: " + e.message, true);
         }
+    }
+
+    // ─────────────────────────────────────────
+    // VOICE INPUT (SpeechRecognition) + OUTPUT (speechSynthesis)
+    // ─────────────────────────────────────────
+    let voiceLang = "hi-IN";        // default Hindi
+    let speakerOn = false;          // off by default — user must opt in
+    let recognition = null;
+    let isListening = false;
+
+    function setVoiceLang(lang) {
+        voiceLang = lang;
+        if (recognition) recognition.lang = lang;
+        // Stop any in-progress speech so the next reply uses the new language
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+    }
+
+    function showMicStatus(text, show=true) {
+        const el = document.getElementById("micStatus");
+        if (!el) return;
+        el.innerText = text;
+        el.classList.toggle("hidden", !show);
+    }
+
+    function initRecognition() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) return null;
+        const r = new SR();
+        r.lang = voiceLang;
+        r.interimResults = false;
+        r.maxAlternatives = 1;
+        r.continuous = false;
+
+        r.onstart = () => {
+            isListening = true;
+            const btn = document.getElementById("micBtn");
+            btn.classList.remove("bg-white", "text-green-700");
+            btn.classList.add("bg-red-500", "text-white", "animate-pulse");
+            showMicStatus("🎤 Suniye... ab boliye / Listening...");
+        };
+        r.onerror = (e) => {
+            showMicStatus("Mic error: " + e.error);
+        };
+        r.onend = () => {
+            isListening = false;
+            const btn = document.getElementById("micBtn");
+            btn.classList.add("bg-white", "text-green-700");
+            btn.classList.remove("bg-red-500", "text-white", "animate-pulse");
+            setTimeout(() => showMicStatus("", false), 1500);
+        };
+        r.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            const input = document.getElementById("chatInput");
+            input.value = (input.value ? input.value + " " : "") + text;
+            input.focus();
+        };
+        return r;
+    }
+
+    function toggleMic(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!recognition) recognition = initRecognition();
+        if (!recognition) {
+            showMicStatus("Aapka browser voice input support nahi karta / Voice input not supported in this browser.");
+            return;
+        }
+        recognition.lang = voiceLang;
+        if (isListening) {
+            try { recognition.stop(); } catch(e) {}
+        } else {
+            try { recognition.start(); } catch(e) { showMicStatus("Mic start error: " + e.message); }
+        }
+    }
+
+    function toggleSpeaker(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        speakerOn = !speakerOn;
+        const btn = document.getElementById("speakerBtn");
+        btn.innerText = speakerOn ? "🔊" : "🔈";
+        if (speakerOn) {
+            btn.classList.add("bg-green-100");
+        } else {
+            btn.classList.remove("bg-green-100");
+            try { window.speechSynthesis.cancel(); } catch(e) {}
+        }
+    }
+
+    function speakReply(text) {
+        if (!speakerOn || !text) return;
+        if (!("speechSynthesis" in window)) return;
+        try {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = voiceLang;
+            u.rate = 0.95;
+            u.pitch = 1;
+            // Prefer a voice matching the selected language if available
+            const voices = window.speechSynthesis.getVoices();
+            const match = voices.find(v => v.lang === voiceLang)
+                       || voices.find(v => v.lang && v.lang.startsWith(voiceLang.split("-")[0]));
+            if (match) u.voice = match;
+            window.speechSynthesis.speak(u);
+        } catch(e) {}
+    }
+
+    // Some browsers populate voices asynchronously — trigger a load
+    if ("speechSynthesis" in window) {
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
 
     // 5. Sarkari Yojana
