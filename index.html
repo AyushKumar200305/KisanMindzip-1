@@ -135,6 +135,12 @@
                         class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 cursor-pointer hover:bg-green-950">
                     🔈 <span data-i18n="hdr.autoRead">Auto-Read</span>
                 </button>
+                <button type="button" id="profileBtn" onclick="openProfile(event)"
+                        data-i18n-title="profile.openTitle"
+                        title="My farm profile"
+                        class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 cursor-pointer hover:bg-green-950">
+                    👤 <span data-i18n="profile.openBtn">My Profile</span>
+                </button>
                 <select id="langToggle" onchange="setVoiceLang(this.value)"
                         title="Language / भाषा"
                         class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 cursor-pointer">
@@ -144,6 +150,90 @@
             </div>
         </div>
     </header>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" onclick="if(event.target===this) closeProfile()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="bg-green-700 text-white px-5 py-3 rounded-t-2xl flex items-center justify-between">
+                <h3 class="font-bold text-lg">👤 <span data-i18n="profile.modalTitle">My Farm Profile</span></h3>
+                <button type="button" onclick="closeProfile()" class="text-white text-2xl leading-none hover:text-green-200">×</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-gray-500" data-i18n="profile.help">Save your farm details once — we'll auto-fill them across Weather, Region Soil, Mandi, Disease and Schemes.</p>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="profile.cityLabel">City / Town</label>
+                    <input id="profileCity" type="text"
+                        data-i18n-placeholder="profile.cityPlaceholder"
+                        placeholder="e.g. Indore / इंदौर"
+                        class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-400 focus:outline-none"/>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="profile.stateLabel">State</label>
+                    <select id="profileState"
+                        class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-green-400 focus:outline-none">
+                        <option value="" data-i18n="profile.statePlaceholder">-- Select State --</option>
+                        <option value="Andhra Pradesh">Andhra Pradesh (आंध्र प्रदेश)</option>
+                        <option value="Arunachal Pradesh">Arunachal Pradesh (अरुणाचल प्रदेश)</option>
+                        <option value="Assam">Assam (असम)</option>
+                        <option value="Bihar">Bihar (बिहार)</option>
+                        <option value="Chhattisgarh">Chhattisgarh (छत्तीसगढ़)</option>
+                        <option value="Goa">Goa (गोवा)</option>
+                        <option value="Gujarat">Gujarat (गुजरात)</option>
+                        <option value="Haryana">Haryana (हरियाणा)</option>
+                        <option value="Himachal Pradesh">Himachal Pradesh (हिमाचल प्रदेश)</option>
+                        <option value="Jharkhand">Jharkhand (झारखंड)</option>
+                        <option value="Karnataka">Karnataka (कर्नाटक)</option>
+                        <option value="Kerala">Kerala (केरल)</option>
+                        <option value="Madhya Pradesh">Madhya Pradesh (मध्य प्रदेश)</option>
+                        <option value="Maharashtra">Maharashtra (महाराष्ट्र)</option>
+                        <option value="Manipur">Manipur (मणिपुर)</option>
+                        <option value="Meghalaya">Meghalaya (मेघालय)</option>
+                        <option value="Mizoram">Mizoram (मिज़ोरम)</option>
+                        <option value="Nagaland">Nagaland (नागालैंड)</option>
+                        <option value="Odisha">Odisha (ओडिशा)</option>
+                        <option value="Punjab">Punjab (पंजाब)</option>
+                        <option value="Rajasthan">Rajasthan (राजस्थान)</option>
+                        <option value="Sikkim">Sikkim (सिक्किम)</option>
+                        <option value="Tamil Nadu">Tamil Nadu (तमिल नाडु)</option>
+                        <option value="Telangana">Telangana (तेलंगाना)</option>
+                        <option value="Tripura">Tripura (त्रिपुरा)</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh (उत्तर प्रदेश)</option>
+                        <option value="Uttarakhand">Uttarakhand (उत्तराखंड)</option>
+                        <option value="West Bengal">West Bengal (पश्चिम बंगाल)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="profile.cropLabel">Main Crop</label>
+                    <select id="profileCrop"
+                        class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-green-400 focus:outline-none">
+                        <option value="" data-i18n="profile.cropPlaceholder">-- Select Main Crop --</option>
+                        <option value="Wheat">🌾 Wheat (गेहूं)</option>
+                        <option value="Rice">🌾 Rice (चावल)</option>
+                        <option value="Maize">🌽 Maize (मक्का)</option>
+                        <option value="Cotton">🌿 Cotton (कपास)</option>
+                        <option value="Tomato">🍅 Tomato (टमाटर)</option>
+                        <option value="Onion">🧅 Onion (प्याज)</option>
+                        <option value="Potato">🥔 Potato (आलू)</option>
+                        <option value="Soybean">🫘 Soybean (सोयाबीन)</option>
+                    </select>
+                </div>
+
+                <p id="profileStatus" class="text-xs text-green-700 hidden"></p>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="saveProfile(event)"
+                        class="flex-1 bg-green-700 text-white py-2 rounded-lg font-semibold text-sm hover:bg-green-800"
+                        data-i18n="profile.saveBtn">💾 Save Profile</button>
+                    <button type="button" onclick="clearProfile(event)"
+                        class="bg-white border border-red-400 text-red-600 px-3 py-2 rounded-lg text-sm hover:bg-red-50"
+                        data-i18n="profile.clearBtn">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Nav Tabs -->
     <div class="bg-green-700 text-white">
@@ -662,7 +752,23 @@
 
             "result.listen": "🔊 Listen",
             "result.error": "Error: ",
-            "common.loading": "Loading..."
+            "common.loading": "Loading...",
+
+            "profile.openBtn": "My Profile",
+            "profile.openTitle": "My farm profile",
+            "profile.modalTitle": "My Farm Profile",
+            "profile.help": "Save your farm details once — we'll auto-fill them across Weather, Region Soil, Mandi, Disease and Schemes.",
+            "profile.cityLabel": "City / Town",
+            "profile.cityPlaceholder": "e.g. Indore / इंदौर",
+            "profile.stateLabel": "State",
+            "profile.statePlaceholder": "-- Select State --",
+            "profile.cropLabel": "Main Crop",
+            "profile.cropPlaceholder": "-- Select Main Crop --",
+            "profile.saveBtn": "💾 Save Profile",
+            "profile.clearBtn": "Clear",
+            "profile.saved": "✅ Profile saved — auto-filled across the app.",
+            "profile.cleared": "Profile cleared.",
+            "profile.empty": "Please fill at least one field before saving."
         },
         hi: {
             "hdr.title": "किसानमाइंड",
@@ -812,7 +918,23 @@
 
             "result.listen": "🔊 सुनें",
             "result.error": "त्रुटि: ",
-            "common.loading": "लोड हो रहा है..."
+            "common.loading": "लोड हो रहा है...",
+
+            "profile.openBtn": "मेरा प्रोफ़ाइल",
+            "profile.openTitle": "मेरा कृषि प्रोफ़ाइल",
+            "profile.modalTitle": "मेरा कृषि प्रोफ़ाइल",
+            "profile.help": "एक बार अपनी जानकारी सहेजें — मौसम, क्षेत्र-मिट्टी, मंडी, रोग और योजना में अपने आप भर जाएगी।",
+            "profile.cityLabel": "शहर / कस्बा",
+            "profile.cityPlaceholder": "जैसे इंदौर / Indore",
+            "profile.stateLabel": "राज्य",
+            "profile.statePlaceholder": "-- राज्य चुनें --",
+            "profile.cropLabel": "मुख्य फसल",
+            "profile.cropPlaceholder": "-- मुख्य फसल चुनें --",
+            "profile.saveBtn": "💾 प्रोफ़ाइल सहेजें",
+            "profile.clearBtn": "हटाएँ",
+            "profile.saved": "✅ प्रोफ़ाइल सहेज ली — पूरे ऐप में अपने आप भर दी।",
+            "profile.cleared": "प्रोफ़ाइल हटा दी।",
+            "profile.empty": "सहेजने से पहले कम-से-कम एक खाना भरें।"
         }
     };
 
@@ -2180,11 +2302,106 @@
         }
     }
 
+    // ─────────────────────────────────────────
+    // Farm Profile (saved in browser localStorage)
+    // ─────────────────────────────────────────
+    const PROFILE_KEY = "kisanmind_profile_v1";
+
+    function loadProfile() {
+        try {
+            const raw = localStorage.getItem(PROFILE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    }
+
+    function setIfExists(id, value) {
+        const el = document.getElementById(id);
+        if (!el || value == null || value === "") return;
+        // Only fill if user hasn't already typed something
+        if (("value" in el) && !el.value) el.value = value;
+    }
+
+    function applyProfileToInputs(p) {
+        if (!p) return;
+        setIfExists("weatherCity", p.city);
+        setIfExists("regionCity", p.city);
+        setIfExists("mandiState", p.state);
+        setIfExists("yojanaState", p.state);
+        setIfExists("commodity", p.crop);
+        setIfExists("diseaseCrop", p.crop);
+    }
+
+    function openProfile(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const p = loadProfile() || {};
+        const cityEl = document.getElementById("profileCity");
+        const stateEl = document.getElementById("profileState");
+        const cropEl = document.getElementById("profileCrop");
+        if (cityEl) cityEl.value = p.city || "";
+        if (stateEl) stateEl.value = p.state || "";
+        if (cropEl) cropEl.value = p.crop || "";
+        const status = document.getElementById("profileStatus");
+        if (status) status.classList.add("hidden");
+        document.getElementById("profileModal").classList.remove("hidden");
+    }
+
+    function closeProfile() {
+        document.getElementById("profileModal").classList.add("hidden");
+    }
+
+    function saveProfile(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const profile = {
+            city:  (document.getElementById("profileCity").value  || "").trim(),
+            state: (document.getElementById("profileState").value || "").trim(),
+            crop:  (document.getElementById("profileCrop").value  || "").trim(),
+        };
+        const status = document.getElementById("profileStatus");
+        if (!profile.city && !profile.state && !profile.crop) {
+            if (status) {
+                status.textContent = t("profile.empty");
+                status.className = "text-xs text-red-600";
+                status.classList.remove("hidden");
+            }
+            return;
+        }
+        try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {}
+        // Force-apply (overwrite) on save so user sees the result immediately
+        if (profile.city)  { const a=document.getElementById("weatherCity"); if(a) a.value=profile.city;
+                             const b=document.getElementById("regionCity");  if(b) b.value=profile.city; }
+        if (profile.state) { const a=document.getElementById("mandiState");  if(a) a.value=profile.state;
+                             const b=document.getElementById("yojanaState"); if(b) b.value=profile.state; }
+        if (profile.crop)  { const a=document.getElementById("commodity");   if(a) a.value=profile.crop;
+                             const b=document.getElementById("diseaseCrop"); if(b) b.value=profile.crop; }
+        if (status) {
+            status.textContent = t("profile.saved");
+            status.className = "text-xs text-green-700";
+            status.classList.remove("hidden");
+        }
+        setTimeout(closeProfile, 900);
+    }
+
+    function clearProfile(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        try { localStorage.removeItem(PROFILE_KEY); } catch (e) {}
+        ["profileCity","profileState","profileCrop"].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = "";
+        });
+        const status = document.getElementById("profileStatus");
+        if (status) {
+            status.textContent = t("profile.cleared");
+            status.className = "text-xs text-gray-500";
+            status.classList.remove("hidden");
+        }
+    }
+
     // Apply translations on initial load (default language is Hindi)
     document.addEventListener("DOMContentLoaded", () => {
         const sel = document.getElementById("langToggle");
         if (sel) sel.value = voiceLang;
         applyI18n();
+        // Auto-fill all inputs from the saved farm profile (if any)
+        applyProfileToInputs(loadProfile());
     });
 </script>
 
