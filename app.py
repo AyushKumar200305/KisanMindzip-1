@@ -126,6 +126,49 @@ def yojana_route():
         return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────
+# 4b. MANDI BHAV BY LOCATION (reverse-geocode → state, then reuse mandi agent)
+# ─────────────────────────────────────────
+@app.route("/api/mandi/by-location", methods=["POST", "OPTIONS"])
+def mandi_by_location_route():
+    if request.method == "OPTIONS":
+        return "", 200
+    if not OPENWEATHER_API_KEY:
+        return jsonify({"error": "OPENWEATHER_API_KEY not configured on the server."}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        commodity = (data.get("commodity") or "").strip()
+        lat = data.get("lat")
+        lon = data.get("lon")
+
+        if not commodity:
+            return jsonify({"error": "commodity is required"}), 400
+        if lat is None or lon is None:
+            return jsonify({"error": "lat and lon are required"}), 400
+
+        # Reverse-geocode lat/lon → state (uses existing OpenWeather key)
+        geo = requests.get(
+            "http://api.openweathermap.org/geo/1.0/reverse",
+            params={"lat": lat, "lon": lon, "limit": 1,
+                    "appid": OPENWEATHER_API_KEY},
+            timeout=10
+        ).json()
+        if not isinstance(geo, list) or not geo:
+            return jsonify({"error": "Could not resolve your location to a state."}), 400
+
+        state = geo[0].get("state") or geo[0].get("name") or ""
+        if not state:
+            return jsonify({"error": "Could not detect state from location."}), 400
+
+        # Reuse the existing mandi agent — no change to /api/mandi
+        result = mandi_bhav_agent(commodity=commodity, state=state)
+        result["detected_state"] = state
+        return jsonify(result)
+    except requests.RequestException as e:
+        return jsonify({"error": f"Location service unreachable: {e}"}), 502
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────────────────
 # 6. WEATHER (OpenWeather)
 # ─────────────────────────────────────────
 @app.route("/api/weather", methods=["GET", "POST", "OPTIONS"])

@@ -180,6 +180,14 @@
                     class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
                     Get Mandi Prices
                 </button>
+                <div class="mt-3 flex items-center gap-2 flex-wrap">
+                    <span class="text-xs text-gray-500">Ya seedha apni location se:</span>
+                    <button type="button" onclick="getMandiByLocation(event)"
+                        class="bg-white border border-green-600 text-green-700 px-3 py-1 rounded text-sm hover:bg-green-50">
+                        📍 Use my location
+                    </button>
+                    <span id="mandiDetectedLoc" class="text-xs text-green-700 hidden"></span>
+                </div>
                 <div id="mandiResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
             </div>
         </div>
@@ -626,6 +634,50 @@
     // Some browsers populate voices asynchronously — trigger a load
     if ("speechSynthesis" in window) {
         window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // 4b. Mandi by location
+    function getMandiByLocation(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const commodity = document.getElementById("commodity").value.trim();
+        if (!commodity) {
+            showResult("mandiResult", "Pehle fasal ka naam likho (e.g. Wheat, Rice).", true);
+            return;
+        }
+        if (!navigator.geolocation) {
+            showResult("mandiResult", "Geolocation not supported in this browser.", true);
+            return;
+        }
+        const locBadge = document.getElementById("mandiDetectedLoc");
+        locBadge.classList.add("hidden");
+        setLoading("mandiResult", "Aapki location detect ho rahi hai...");
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setLoading("mandiResult", "Mandi prices fetch ho rahi hain...");
+                try {
+                    const res = await fetch(`${BASE_URL}/api/mandi/by-location`, {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({commodity, lat: latitude, lon: longitude})
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                        showResult("mandiResult", "Error: " + data.error, true);
+                        return;
+                    }
+                    if (data.detected_state) {
+                        document.getElementById("mandiState").value = data.detected_state;
+                        locBadge.innerText = "📍 Detected: " + data.detected_state;
+                        locBadge.classList.remove("hidden");
+                    }
+                    showResult("mandiResult", data.agent_advice || JSON.stringify(data));
+                } catch(e) {
+                    showResult("mandiResult", "Error: " + e.message, true);
+                }
+            },
+            (err) => showResult("mandiResult", "Location denied: " + err.message, true)
+        );
     }
 
     // 5. Sarkari Yojana
