@@ -1,0 +1,416 @@
+{
+  "schemes": [
+    {
+      "id": "pm_kisan",
+      "keywords": ["pm-kisan", "pm kisan", "pmkisan", "pradhan mantri kisan samman", "samman nidhi", "6000", "kisan samman", "किसान सम्मान", "पीएम-किसान", "पीएम किसान", "सम्मान निधि"],
+      "en": {
+        "name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
+        "eligibility": [
+          "Indian small and marginal farmer families owning cultivable land.",
+          "Farmer must have a valid Aadhaar and an active bank account linked to Aadhaar.",
+          "Income-tax payers, government employees and large landholders are NOT eligible."
+        ],
+        "benefits": [
+          "₹6,000 per year paid directly to the bank account.",
+          "Released in 3 equal installments of ₹2,000 every 4 months.",
+          "100% Central Government scheme — no premium or fee."
+        ],
+        "steps": [
+          "Visit pmkisan.gov.in and click 'New Farmer Registration'.",
+          "Enter Aadhaar number, state and complete the form, or visit the nearest CSC / Krishi office.",
+          "Get verification done by your village/block officer.",
+          "Track payment status under 'Beneficiary Status' on the same website."
+        ]
+      },
+      "hi": {
+        "name": "पीएम-किसान (प्रधानमंत्री किसान सम्मान निधि)",
+        "eligibility": [
+          "खेती योग्य ज़मीन वाले छोटे और सीमांत किसान परिवार पात्र हैं।",
+          "किसान के पास वैध आधार और आधार से जुड़ा बैंक खाता होना चाहिए।",
+          "इनकम टैक्स देने वाले, सरकारी कर्मचारी और बड़े ज़मींदार पात्र नहीं हैं।"
+        ],
+        "benefits": [
+          "हर साल ₹6,000 सीधे बैंक खाते में दिए जाते हैं।",
+          "हर 4 महीने में ₹2,000 की 3 किस्तों में भुगतान।",
+          "100% केंद्र सरकार की योजना — कोई फ़ीस या प्रीमियम नहीं।"
+        ],
+        "steps": [
+          "pmkisan.gov.in पर जाएँ और 'New Farmer Registration' पर क्लिक करें।",
+          "आधार नंबर, राज्य और फॉर्म भरें, या नज़दीकी CSC/कृषि कार्यालय जाएँ।",
+          "गाँव/ब्लॉक अधिकारी से सत्यापन कराएँ।",
+          "उसी वेबसाइट पर 'Beneficiary Status' से भुगतान देखें।"
+        ]
+      }
+    },
+    {
+      "id": "pmfby",
+      "keywords": ["pmfby", "fasal bima", "crop insurance", "pradhan mantri fasal bima", "बीमा", "फसल बीमा", "पीएमएफबीवाई"],
+      "en": {
+        "name": "PM Fasal Bima Yojana (PMFBY)",
+        "eligibility": [
+          "All farmers — owner-cultivators, tenants and sharecroppers — growing notified crops in notified areas.",
+          "Compulsory for farmers who have taken a crop loan; voluntary for non-loanee farmers."
+        ],
+        "benefits": [
+          "Insurance cover against natural calamities, pests and diseases for notified crops.",
+          "Farmer pays only 2% of premium for Kharif food/oilseed crops, 1.5% for Rabi crops and 5% for commercial/horticulture crops; rest is paid by the government.",
+          "Sum insured equals the scale of finance for the crop in that area."
+        ],
+        "steps": [
+          "Apply at the nearest bank, Common Service Centre (CSC) or insurance company office.",
+          "Provide Aadhaar, land records (khasra/khatauni), bank passbook and sown-area declaration.",
+          "Pay the farmer's share of premium before the cut-off date for that season.",
+          "In case of loss, report damage within 72 hours via the Crop Insurance App, toll-free 14447, or your bank/insurer."
+        ]
+      },
+      "hi": {
+        "name": "प्रधानमंत्री फसल बीमा योजना (PMFBY)",
+        "eligibility": [
+          "अधिसूचित क्षेत्र में अधिसूचित फसलें उगाने वाले सभी किसान — मालिक, बटाईदार और काश्तकार — पात्र हैं।",
+          "फसली ऋण लेने वाले किसानों के लिए अनिवार्य; बिना ऋण वालों के लिए स्वैच्छिक।"
+        ],
+        "benefits": [
+          "प्राकृतिक आपदा, कीट और बीमारियों से अधिसूचित फसलों के लिए बीमा सुरक्षा।",
+          "किसान का प्रीमियम: ख़रीफ़ खाद्य/तिलहन में 2%, रबी में 1.5% और बागवानी/व्यावसायिक फसल में 5%। बाक़ी सरकार देती है।",
+          "बीमा राशि उस क्षेत्र की फसल के स्केल ऑफ़ फाइनेंस के बराबर होती है।"
+        ],
+        "steps": [
+          "नज़दीकी बैंक, CSC या बीमा कंपनी के कार्यालय में आवेदन करें।",
+          "आधार, ज़मीन के कागज़ (खसरा/खतौनी), बैंक पासबुक और बुवाई का घोषणा-पत्र दें।",
+          "उस सीज़न की अंतिम तारीख़ से पहले अपना प्रीमियम जमा कराएँ।",
+          "नुक़सान होने पर 72 घंटे के अंदर Crop Insurance App, टोल-फ़्री 14447 या बैंक/बीमा कंपनी को सूचित करें।"
+        ]
+      }
+    },
+    {
+      "id": "kcc",
+      "keywords": ["kcc", "kisan credit card", "किसान क्रेडिट कार्ड", "क्रेडिट कार्ड", "loan", "ऋण", "कर्ज"],
+      "en": {
+        "name": "Kisan Credit Card (KCC)",
+        "eligibility": [
+          "Individual or joint cultivator-farmers (owner, tenant, oral lessee or sharecropper).",
+          "Self Help Groups (SHGs) and Joint Liability Groups (JLGs) of farmers are also eligible.",
+          "Animal husbandry and fisheries farmers are covered too."
+        ],
+        "benefits": [
+          "Short-term crop loan at 7% interest; 3% interest subvention if repaid on time → effective 4%.",
+          "Loans up to ₹1.6 lakh without any collateral.",
+          "Single card covers crop production, post-harvest, household and asset-maintenance needs."
+        ],
+        "steps": [
+          "Visit your nearest commercial bank, Regional Rural Bank or co-operative bank.",
+          "Fill the simple one-page KCC form and submit Aadhaar, PAN, land records and a passport-size photo.",
+          "Bank verifies land and sanctions a credit limit based on crop and area.",
+          "Use the KCC like a debit card to draw money for farming needs."
+        ]
+      },
+      "hi": {
+        "name": "किसान क्रेडिट कार्ड (KCC)",
+        "eligibility": [
+          "व्यक्तिगत या संयुक्त रूप से खेती करने वाले किसान (मालिक, बटाईदार, मौखिक पट्टेदार)।",
+          "किसानों के SHG और JLG भी पात्र हैं।",
+          "पशुपालन और मछलीपालन वाले किसान भी इसमें शामिल हैं।"
+        ],
+        "benefits": [
+          "फसली ऋण 7% ब्याज पर; समय पर लौटाने पर 3% की छूट → असली ब्याज सिर्फ़ 4%।",
+          "₹1.6 लाख तक का ऋण बिना किसी ज़मानत के मिलता है।",
+          "एक ही कार्ड में फसल, कटाई के बाद, घरेलू और मशीन रखरखाव की ज़रूरतें पूरी होती हैं।"
+        ],
+        "steps": [
+          "नज़दीकी सरकारी, ग्रामीण या सहकारी बैंक जाएँ।",
+          "एक पन्ने का सरल KCC फ़ॉर्म भरें और आधार, पैन, ज़मीन के कागज़ और फ़ोटो दें।",
+          "बैंक ज़मीन की जाँच करके फसल और रक़बे के अनुसार क्रेडिट लिमिट तय करता है।",
+          "KCC को डेबिट कार्ड की तरह इस्तेमाल कर खेती के लिए पैसा निकालें।"
+        ]
+      }
+    },
+    {
+      "id": "pmksy",
+      "keywords": ["pmksy", "krishi sinchai", "drip", "sprinkler", "micro irrigation", "सिंचाई", "टपक", "ड्रिप", "स्प्रिंकलर"],
+      "en": {
+        "name": "Pradhan Mantri Krishi Sinchayee Yojana (PMKSY) — Per Drop More Crop",
+        "eligibility": [
+          "All categories of farmers (small, marginal and others) with cultivable land.",
+          "Farmer must have an assured water source on the field.",
+          "Land records and bank account in the farmer's name."
+        ],
+        "benefits": [
+          "Subsidy on drip and sprinkler irrigation systems.",
+          "Small & marginal farmers usually get 55% subsidy; other farmers get 45% (states may add a top-up).",
+          "Reduces water use by up to 50% and improves crop yield."
+        ],
+        "steps": [
+          "Apply at your State Agriculture / Horticulture Department or on the state's PMKSY portal.",
+          "Submit Aadhaar, land documents, bank details and a quotation from an empanelled vendor.",
+          "Get the field surveyed and the subsidy approved.",
+          "Install the system through the empanelled vendor; subsidy is credited to your bank account."
+        ]
+      },
+      "hi": {
+        "name": "प्रधानमंत्री कृषि सिंचाई योजना (PMKSY) — पर ड्रॉप मोर क्रॉप",
+        "eligibility": [
+          "सभी श्रेणी के किसान (छोटे, सीमांत और अन्य) जिनके पास खेती की ज़मीन है।",
+          "खेत पर पक्का जल स्रोत होना चाहिए।",
+          "ज़मीन के कागज़ और किसान के नाम पर बैंक खाता ज़रूरी है।"
+        ],
+        "benefits": [
+          "ड्रिप और स्प्रिंकलर सिंचाई प्रणाली पर सब्सिडी।",
+          "छोटे/सीमांत किसानों को आमतौर पर 55% और अन्य किसानों को 45% सब्सिडी (राज्य अतिरिक्त भी दे सकते हैं)।",
+          "पानी की 50% तक बचत और फसल उत्पादन में वृद्धि।"
+        ],
+        "steps": [
+          "राज्य के कृषि/उद्यानिकी विभाग या PMKSY पोर्टल पर आवेदन करें।",
+          "आधार, ज़मीन के कागज़, बैंक पासबुक और सूचीबद्ध वेंडर का कोटेशन जमा करें।",
+          "खेत का सर्वे कराएँ और सब्सिडी मंज़ूर कराएँ।",
+          "सूचीबद्ध वेंडर से सिस्टम लगवाएँ; सब्सिडी सीधे बैंक खाते में आ जाती है।"
+        ]
+      }
+    },
+    {
+      "id": "shc",
+      "keywords": ["soil health card", "shc", "soil testing", "मिट्टी जाँच", "मिट्टी स्वास्थ्य", "मृदा स्वास्थ्य"],
+      "en": {
+        "name": "Soil Health Card Scheme",
+        "eligibility": [
+          "All farmers across India holding cultivable land.",
+          "No income or land-size limit."
+        ],
+        "benefits": [
+          "Free testing of 12 soil parameters (N, P, K, micronutrients, pH, EC, organic carbon).",
+          "Card with crop-wise nutrient and fertilizer recommendations valid for 2 years.",
+          "Helps reduce fertilizer cost and improves yield by 8–10%."
+        ],
+        "steps": [
+          "Visit the nearest Krishi Vigyan Kendra (KVK), Soil Testing Lab or your village agriculture officer.",
+          "Provide a soil sample collected as per the guidelines (about 500 g from each plot).",
+          "Sample is tested and a Soil Health Card is issued in your name within a few weeks.",
+          "Follow the fertilizer dose printed on the card for each crop."
+        ]
+      },
+      "hi": {
+        "name": "मृदा स्वास्थ्य कार्ड (Soil Health Card) योजना",
+        "eligibility": [
+          "भारत के सभी किसान जिनके पास खेती की ज़मीन है।",
+          "आमदनी या ज़मीन के आकार की कोई सीमा नहीं।"
+        ],
+        "benefits": [
+          "12 ज़रूरी मिट्टी पैरामीटर (N, P, K, सूक्ष्म पोषक, pH, EC, ऑर्गेनिक कार्बन) की मुफ़्त जाँच।",
+          "फसल के अनुसार खाद और पोषक तत्व की सलाह वाला कार्ड, 2 साल तक मान्य।",
+          "खाद का खर्च कम और पैदावार में 8–10% बढ़ोतरी।"
+        ],
+        "steps": [
+          "नज़दीकी कृषि विज्ञान केंद्र (KVK), मिट्टी जाँच प्रयोगशाला या गाँव के कृषि अधिकारी से संपर्क करें।",
+          "नियमों के अनुसार खेत से मिट्टी का नमूना (हर प्लॉट से लगभग 500 ग्राम) दें।",
+          "जाँच के बाद कुछ हफ़्तों में आपके नाम का मृदा स्वास्थ्य कार्ड जारी होता है।",
+          "कार्ड पर लिखी खाद की मात्रा के अनुसार ही उर्वरक डालें।"
+        ]
+      }
+    },
+    {
+      "id": "enam",
+      "keywords": ["enam", "e-nam", "national agriculture market", "online mandi", "ऑनलाइन मंडी", "ई-नाम", "एनएएम"],
+      "en": {
+        "name": "eNAM (National Agriculture Market)",
+        "eligibility": [
+          "Any farmer, trader, FPO or commission agent registered with a participating APMC mandi.",
+          "Available in 1,000+ mandis across 23+ states and UTs."
+        ],
+        "benefits": [
+          "Online platform to sell produce in any linked mandi at the best national price.",
+          "Transparent online bidding — no need for middlemen.",
+          "Direct payment to the farmer's bank account."
+        ],
+        "steps": [
+          "Register at enam.gov.in or through the eNAM mobile app — give Aadhaar, bank details and mandi name.",
+          "Get verification done at your local APMC mandi.",
+          "Bring produce to the mandi for quality assaying.",
+          "Buyers bid online; on acceptance, payment is credited to your bank account."
+        ]
+      },
+      "hi": {
+        "name": "eNAM (राष्ट्रीय कृषि बाज़ार)",
+        "eligibility": [
+          "किसी भी जुड़ी हुई APMC मंडी में रजिस्टर्ड किसान, व्यापारी, FPO या कमीशन एजेंट।",
+          "23+ राज्यों/केंद्रशासित प्रदेशों की 1,000 से ज़्यादा मंडियों में उपलब्ध।"
+        ],
+        "benefits": [
+          "किसी भी जुड़ी मंडी में देश के सबसे बेहतर दाम पर ऑनलाइन फसल बेचने का मंच।",
+          "पारदर्शी ऑनलाइन बोली — बिचौलियों की ज़रूरत नहीं।",
+          "किसान के बैंक खाते में सीधा भुगतान।"
+        ],
+        "steps": [
+          "enam.gov.in या eNAM मोबाइल ऐप पर रजिस्टर करें — आधार, बैंक विवरण और मंडी का नाम दें।",
+          "स्थानीय APMC मंडी में जाकर सत्यापन कराएँ।",
+          "फसल को मंडी में लाएँ और गुणवत्ता जाँच कराएँ।",
+          "खरीदार ऑनलाइन बोली लगाते हैं; सहमति पर पैसा सीधे आपके बैंक खाते में आता है।"
+        ]
+      }
+    },
+    {
+      "id": "pmkmy",
+      "keywords": ["pmkmy", "kisan mandhan", "pension", "पेंशन", "मानधन", "किसान मानधन"],
+      "en": {
+        "name": "PM Kisan Maan-Dhan Yojana (PMKMY)",
+        "eligibility": [
+          "Small and marginal farmers (cultivable land up to 2 hectares).",
+          "Age between 18 and 40 years at the time of joining.",
+          "Should not be covered by any other social security scheme like EPFO, ESIC or NPS."
+        ],
+        "benefits": [
+          "Assured pension of ₹3,000 per month after the age of 60.",
+          "Equal contribution by the Government of India to the pension fund (matching the farmer's share).",
+          "Spouse gets 50% family pension after the farmer's death."
+        ],
+        "steps": [
+          "Visit the nearest Common Service Centre (CSC) with Aadhaar and bank passbook.",
+          "Pay the monthly contribution (₹55–₹200, depending on age at joining).",
+          "Get an enrolment number and Kisan Pension Card.",
+          "Continue monthly contribution till age 60; pension auto-credits thereafter."
+        ]
+      },
+      "hi": {
+        "name": "पीएम किसान मानधन योजना (PMKMY)",
+        "eligibility": [
+          "छोटे और सीमांत किसान (2 हेक्टेयर तक खेती योग्य ज़मीन)।",
+          "जुड़ते समय उम्र 18 से 40 साल के बीच होनी चाहिए।",
+          "EPFO, ESIC या NPS जैसी किसी अन्य सामाजिक सुरक्षा योजना में नहीं होने चाहिए।"
+        ],
+        "benefits": [
+          "60 साल की उम्र के बाद हर महीने ₹3,000 की निश्चित पेंशन।",
+          "किसान जितना देगा उतना ही योगदान भारत सरकार पेंशन फंड में देगी।",
+          "किसान की मृत्यु पर पत्नी/पति को 50% पारिवारिक पेंशन।"
+        ],
+        "steps": [
+          "नज़दीकी CSC जाएँ, साथ में आधार और बैंक पासबुक ले जाएँ।",
+          "उम्र के अनुसार ₹55–₹200 प्रति माह का योगदान करें।",
+          "नामांकन नंबर और किसान पेंशन कार्ड प्राप्त करें।",
+          "60 साल तक हर महीने योगदान जारी रखें; उसके बाद पेंशन अपने आप बैंक में आती है।"
+        ]
+      }
+    },
+    {
+      "id": "pkvy",
+      "keywords": ["pkvy", "paramparagat", "organic", "जैविक", "परम्परागत", "ऑर्गेनिक"],
+      "en": {
+        "name": "Paramparagat Krishi Vikas Yojana (PKVY)",
+        "eligibility": [
+          "Farmers willing to take up organic / cluster-based natural farming.",
+          "A cluster of 50 farmers covering 50 acres (about 20 hectares) is preferred.",
+          "Land records and bank account in the farmer's name."
+        ],
+        "benefits": [
+          "Financial assistance of about ₹50,000 per hectare over 3 years (out of which roughly ₹31,000 goes directly to the farmer for inputs).",
+          "Free training on organic practices, certification (PGS-India) and bio-fertilizer support.",
+          "Help in branding, packaging and direct marketing of organic produce."
+        ],
+        "steps": [
+          "Form or join a cluster of 50 farmers and approach the State Agriculture Department or KVK.",
+          "Submit cluster details, land records and bank account information.",
+          "Cluster gets registered under PKVY and a Lead Resource Person is assigned.",
+          "Follow the 3-year organic plan; benefits and certification are released in stages."
+        ]
+      },
+      "hi": {
+        "name": "परम्परागत कृषि विकास योजना (PKVY)",
+        "eligibility": [
+          "जैविक / क्लस्टर आधारित प्राकृतिक खेती करने वाले किसान।",
+          "50 किसानों का क्लस्टर जिसमें 50 एकड़ (लगभग 20 हेक्टेयर) ज़मीन होती है, बेहतर माना जाता है।",
+          "ज़मीन के कागज़ और किसान के नाम पर बैंक खाता ज़रूरी।"
+        ],
+        "benefits": [
+          "3 साल में लगभग ₹50,000 प्रति हेक्टेयर की आर्थिक सहायता (जिसमें से लगभग ₹31,000 सीधे किसान को इनपुट के लिए मिलते हैं)।",
+          "जैविक खेती की मुफ़्त ट्रेनिंग, PGS-India सर्टिफ़िकेशन और जैव-उर्वरक सहायता।",
+          "जैविक उत्पाद की ब्रांडिंग, पैकेजिंग और सीधी बिक्री में मदद।"
+        ],
+        "steps": [
+          "50 किसानों का क्लस्टर बनाएँ या उससे जुड़ें और राज्य कृषि विभाग/KVK से संपर्क करें।",
+          "क्लस्टर विवरण, ज़मीन के कागज़ और बैंक खाता जमा करें।",
+          "क्लस्टर PKVY में रजिस्टर होता है और एक Lead Resource Person नियुक्त होता है।",
+          "3 साल की जैविक योजना का पालन करें; सहायता और सर्टिफ़िकेशन चरणों में मिलते हैं।"
+        ]
+      }
+    },
+    {
+      "id": "kvp",
+      "keywords": ["kvp", "kisan vikas patra", "किसान विकास पत्र", "विकास पत्र"],
+      "en": {
+        "name": "Kisan Vikas Patra (KVP)",
+        "eligibility": [
+          "Any Indian resident adult; can also be opened jointly or by a guardian for a minor.",
+          "Minimum investment ₹1,000; no maximum limit.",
+          "Available at all Post Offices and most public sector banks."
+        ],
+        "benefits": [
+          "Safe, government-backed savings certificate.",
+          "Investment doubles in 115 months (9 years 7 months) at the current rate.",
+          "Can be pledged as collateral for loans; transferable from one person to another."
+        ],
+        "steps": [
+          "Visit the nearest Post Office or authorised bank branch with Aadhaar, PAN and address proof.",
+          "Fill Form A and deposit the amount in cash, cheque or DD.",
+          "Receive the KVP certificate (or e-record) immediately.",
+          "Encash after maturity at the same Post Office / branch."
+        ]
+      },
+      "hi": {
+        "name": "किसान विकास पत्र (KVP)",
+        "eligibility": [
+          "कोई भी भारतीय वयस्क; नाबालिग के लिए अभिभावक भी खोल सकता है, संयुक्त खाता भी मान्य।",
+          "न्यूनतम निवेश ₹1,000; अधिकतम की कोई सीमा नहीं।",
+          "सभी डाकघरों और अधिकांश सार्वजनिक बैंकों में उपलब्ध।"
+        ],
+        "benefits": [
+          "सरकार द्वारा गारंटी वाली सुरक्षित बचत योजना।",
+          "वर्तमान दर पर पैसा 115 महीनों (9 साल 7 महीने) में दुगना हो जाता है।",
+          "ऋण के लिए ज़मानत के तौर पर रखा जा सकता है; एक व्यक्ति से दूसरे को ट्रांसफ़र भी संभव।"
+        ],
+        "steps": [
+          "नज़दीकी डाकघर या अधिकृत बैंक शाखा में आधार, पैन और पता प्रमाण ले जाएँ।",
+          "फ़ॉर्म A भरें और राशि नक़द/चेक/DD से जमा करें।",
+          "तुरंत KVP प्रमाण-पत्र (या e-रिकॉर्ड) मिल जाता है।",
+          "मियाद पूरी होने पर उसी डाकघर/शाखा में पैसा भुनाएँ।"
+        ]
+      }
+    },
+    {
+      "id": "mnrega",
+      "keywords": ["mnrega", "nrega", "मनरेगा", "नरेगा", "100 days", "guaranteed wage", "रोज़गार गारंटी"],
+      "en": {
+        "name": "MGNREGA — Mahatma Gandhi National Rural Employment Guarantee Act",
+        "eligibility": [
+          "Any adult member of a rural household willing to do unskilled manual work.",
+          "Household must be registered with the Gram Panchayat and have a Job Card."
+        ],
+        "benefits": [
+          "Guaranteed 100 days of wage employment in a financial year per rural household.",
+          "Statutory minimum wage as notified by the State.",
+          "Permissible works include farm-pond construction, land levelling, well digging, plantation and water conservation on individual farmer's land (small/marginal farmers, SC/ST and other priority categories)."
+        ],
+        "steps": [
+          "Apply for a Job Card at the Gram Panchayat office with Aadhaar and family photo.",
+          "Submit a written demand for work to the Gram Panchayat / Programme Officer.",
+          "Work must be allotted within 15 days; wages are paid directly into the bank/post office account.",
+          "For individual benefits (farm pond, well, etc.), apply through the Gram Panchayat with land documents."
+        ]
+      },
+      "hi": {
+        "name": "मनरेगा — महात्मा गांधी राष्ट्रीय ग्रामीण रोज़गार गारंटी अधिनियम",
+        "eligibility": [
+          "ग्रामीण परिवार का कोई भी वयस्क सदस्य जो अकुशल मज़दूरी करने को तैयार हो।",
+          "परिवार ग्राम पंचायत में पंजीकृत और जॉब कार्ड वाला होना चाहिए।"
+        ],
+        "benefits": [
+          "हर ग्रामीण परिवार को साल में 100 दिन की मज़दूरी की गारंटी।",
+          "राज्य द्वारा तय न्यूनतम मज़दूरी।",
+          "खेत-तालाब, ज़मीन समतल करना, कुआँ खुदाई, पौधारोपण और जल संरक्षण जैसे काम छोटे/सीमांत किसान, SC/ST और प्राथमिकता श्रेणी के किसानों की निजी ज़मीन पर भी मान्य हैं।"
+        ],
+        "steps": [
+          "ग्राम पंचायत कार्यालय में आधार और परिवार की फ़ोटो देकर जॉब कार्ड के लिए आवेदन करें।",
+          "ग्राम पंचायत/कार्यक्रम अधिकारी को लिखित में काम की माँग दें।",
+          "15 दिनों के अंदर काम मिलना चाहिए; मज़दूरी सीधे बैंक/डाकघर खाते में आती है।",
+          "खेत-तालाब/कुआँ जैसे निजी कामों के लिए ग्राम पंचायत में ज़मीन के कागज़ के साथ आवेदन करें।"
+        ]
+      }
+    }
+  ]
+}

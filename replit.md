@@ -43,3 +43,5 @@ Configured for **autoscale** with: `gunicorn --bind=0.0.0.0:5000 app:app`.
 ## Recent changes
 
 - 2026-04-25: Imported from Replit Agent. Configured Gunicorn workflow on port 5000, fixed deployment to point at `app:app` (was `main:app` which had no Flask app), and requested the three required API keys.
+- 2026-04-25: Added auto-read TTS toggle and full Hindi/English UI + agent translation (`data-i18n` system in `index.html`, per-language system prompts in every agent). Each `/api/*` route now accepts a `language` field.
+- 2026-04-25: Reworked the Sarkari Yojana agent to be search-first / AI-fallback. New `schemes.json` holds verified bilingual data (name, eligibility, benefits, steps) for 10 major central schemes. `sarkari_yojana.py` now keyword-matches the query against the JSON and returns a clean structured response from local data — no LLM, no hallucination. Only when no scheme matches does it fall back to the existing Groq advisor (with a strict "do not invent" instruction). Response includes `source` (`database` or `ai_fallback`) and `matched_schemes`.
