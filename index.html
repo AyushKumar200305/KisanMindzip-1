@@ -171,6 +171,16 @@
 </head>
 <body class="bg-green-50 min-h-screen">
 
+    <!-- Floating "Stop Voice" button — appears only while the app is reading
+         a reply aloud. Visible on every tab/page. -->
+    <button type="button" id="stopVoiceFab" onclick="stopVoiceNow(event)"
+            data-i18n-title="voice.stopTitle"
+            title="Stop voice"
+            class="hidden fixed bottom-5 right-5 z-50 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-full shadow-lg px-4 py-3 flex items-center gap-2 animate-pulse">
+        <span>⏹️</span>
+        <span data-i18n="voice.stop">Stop Voice</span>
+    </button>
+
     <!-- Header -->
     <header class="bg-green-800 text-white py-4 px-6 shadow-lg">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-3 flex-wrap">
@@ -677,6 +687,8 @@
             "hdr.autoRead": "Auto-Read",
             "hdr.autoReadOn": "Auto-Read ON",
             "hdr.autoReadTitle": "Read replies aloud",
+            "voice.stop": "Stop Voice",
+            "voice.stopTitle": "Stop reading aloud",
 
             "nav.soil": "Soil",
             "nav.chat": "Chat",
@@ -848,6 +860,8 @@
             "hdr.title": "किसानमाइंड",
             "hdr.tagline": "एआई-संचालित किसान सहायक",
             "hdr.autoRead": "स्वतः-पठन",
+            "voice.stop": "आवाज़ रोकें",
+            "voice.stopTitle": "ज़ोर से पढ़ना रोकें",
             "hdr.autoReadOn": "स्वतः-पठन चालू",
             "hdr.autoReadTitle": "जवाब अपने आप सुनिए",
 
@@ -1092,23 +1106,13 @@
         if (!isError) autoSpeak(text);
     }
 
-    // Manually replay a result aloud (always speaks, even if auto-read is off)
+    // Manually replay a result aloud (always speaks, even if auto-read is off).
+    // Routed through speakReply so the floating Stop-Voice button and the
+    // auto-stop timer apply consistently.
     function playResult(elementId, event) {
         if (event) { event.preventDefault(); event.stopPropagation(); }
         const text = _resultStore[elementId];
-        if (!text || !("speechSynthesis" in window)) return;
-        try {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = voiceLang;
-            u.rate = 0.95;
-            u.pitch = 1;
-            const voices = window.speechSynthesis.getVoices();
-            const match = voices.find(v => v.lang === voiceLang)
-                       || voices.find(v => v.lang && v.lang.startsWith(voiceLang.split("-")[0]));
-            if (match) u.voice = match;
-            window.speechSynthesis.speak(u);
-        } catch(e) {}
+        if (text) speakReply(text);
     }
 
     // Loading state helper
@@ -2194,11 +2198,43 @@
         }
     }
 
+    // Maximum time (ms) any single utterance is allowed to keep speaking
+    // before we auto-stop it. Prevents runaway long replies from talking
+    // forever if the user walks away.
+    const VOICE_AUTO_STOP_MS = 90 * 1000;
+    let _voiceAutoStopTimer = null;
+
+    function _showStopVoiceFab() {
+        const fab = document.getElementById("stopVoiceFab");
+        if (fab) fab.classList.remove("hidden");
+    }
+    function _hideStopVoiceFab() {
+        const fab = document.getElementById("stopVoiceFab");
+        if (fab) fab.classList.add("hidden");
+    }
+    function _clearVoiceAutoStop() {
+        if (_voiceAutoStopTimer) {
+            clearTimeout(_voiceAutoStopTimer);
+            _voiceAutoStopTimer = null;
+        }
+    }
+
+    // Globally accessible — stops any reply that's currently being spoken,
+    // regardless of which page/tab the user is on. Wired to the floating
+    // "Stop Voice" button.
+    function stopVoiceNow(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+        _clearVoiceAutoStop();
+        _hideStopVoiceFab();
+    }
+
     function speakReply(text) {
         if (!text) return;
         if (!("speechSynthesis" in window)) return;
         try {
             window.speechSynthesis.cancel();
+            _clearVoiceAutoStop();
             const u = new SpeechSynthesisUtterance(text);
             u.lang = voiceLang;
             u.rate = 0.95;
@@ -2208,8 +2244,19 @@
             const match = voices.find(v => v.lang === voiceLang)
                        || voices.find(v => v.lang && v.lang.startsWith(voiceLang.split("-")[0]));
             if (match) u.voice = match;
+            // Show the floating Stop button while speaking; hide it when done
+            u.onstart = () => {
+                _showStopVoiceFab();
+                _clearVoiceAutoStop();
+                _voiceAutoStopTimer = setTimeout(() => stopVoiceNow(), VOICE_AUTO_STOP_MS);
+            };
+            u.onend = () => { _clearVoiceAutoStop(); _hideStopVoiceFab(); };
+            u.onerror = () => { _clearVoiceAutoStop(); _hideStopVoiceFab(); };
             window.speechSynthesis.speak(u);
-        } catch(e) {}
+        } catch(e) {
+            _clearVoiceAutoStop();
+            _hideStopVoiceFab();
+        }
     }
 
     // Auto-play helper: only speaks if the user enabled the global speaker toggle.
