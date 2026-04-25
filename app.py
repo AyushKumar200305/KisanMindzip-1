@@ -1,4 +1,5 @@
 import os
+import requests
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
@@ -8,6 +9,8 @@ from chat import chat_with_kisan, reset_chat
 from crop_doctor import crop_doctor_agent
 from mandi_bhav import mandi_bhav_agent
 from sarkari_yojana import sarkari_yojana_agent
+
+OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -119,6 +122,95 @@ def yojana_route():
             state=data.get("state", None)
         )
         return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────────────────
+# 6. WEATHER (OpenWeather)
+# ─────────────────────────────────────────
+@app.route("/api/weather", methods=["GET", "POST", "OPTIONS"])
+def weather_route():
+    if request.method == "OPTIONS":
+        return "", 200
+
+    if not OPENWEATHER_API_KEY:
+        return jsonify({"error": "OPENWEATHER_API_KEY is not configured on the server."}), 500
+
+    # Accept lat/lon or city from either JSON body or query params
+    data = request.get_json(silent=True) or {}
+    lat = data.get("lat") or request.args.get("lat")
+    lon = data.get("lon") or request.args.get("lon")
+    city = data.get("city") or request.args.get("city")
+
+    params = {"appid": OPENWEATHER_API_KEY, "units": "metric"}
+    if lat and lon:
+        params["lat"] = lat
+        params["lon"] = lon
+    elif city:
+        params["q"] = city
+    else:
+        return jsonify({"error": "Provide either {lat, lon} or {city}."}), 400
+
+    try:
+        # Current conditions
+        cur = requests.get(
+            "https://api.openweathermap.org/data/2.5/weather",
+            params=params, timeout=10
+        ).json()
+        if str(cur.get("cod")) != "200":
+            return jsonify({"error": cur.get("message", "Weather lookup failed")}), 400
+
+        # Short-term forecast (next 24h, 3-hour steps) for rain prediction
+        fc = requests.get(
+            "https://api.openweathermap.org/data/2.5/forecast",
+            params={**params, "cnt": 8}, timeout=10
+        ).json()
+
+        rain_chunks = []
+        max_pop = 0.0
+        if isinstance(fc.get("list"), list):
+            for item in fc["list"]:
+                pop = float(item.get("pop", 0))
+                if pop > max_pop:
+                    max_pop = pop
+                rain_mm = (item.get("rain") or {}).get("3h", 0)
+                if pop >= 0.3 or rain_mm > 0:
+                    rain_chunks.append({
+                        "time": item.get("dt_txt"),
+                        "pop_percent": round(pop * 100),
+                        "rain_mm_3h": rain_mm,
+                        "desc": (item.get("weather") or [{}])[0].get("description", "")
+                    })
+
+        weather_main = (cur.get("weather") or [{}])[0]
+        rain_now_mm = (cur.get("rain") or {}).get("1h", 0)
+
+        will_rain = max_pop >= 0.4 or rain_now_mm > 0 or weather_main.get("main") in ("Rain", "Drizzle", "Thunderstorm")
+
+        return jsonify({
+            "location": cur.get("name") or city or f"{lat},{lon}",
+            "country": (cur.get("sys") or {}).get("country", ""),
+            "temperature_c": cur.get("main", {}).get("temp"),
+            "feels_like_c": cur.get("main", {}).get("feels_like"),
+            "humidity_percent": cur.get("main", {}).get("humidity"),
+            "wind_kph": round(cur.get("wind", {}).get("speed", 0) * 3.6, 1),
+            "condition": weather_main.get("main", ""),
+            "description": weather_main.get("description", ""),
+            "icon": weather_main.get("icon", ""),
+            "rain_now_mm_1h": rain_now_mm,
+            "rain_prediction": {
+                "will_rain_next_24h": will_rain,
+                "max_probability_percent": round(max_pop * 100),
+                "summary": (
+                    f"Agle 24 ghante mein baarish ka chance: {round(max_pop * 100)}%"
+                    if max_pop > 0 else
+                    "Agle 24 ghante mein baarish ka koi major chance nahi hai."
+                ),
+                "rainy_slots": rain_chunks[:6]
+            }
+        })
+    except requests.RequestException as e:
+        return jsonify({"error": f"Weather service unreachable: {e}"}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
