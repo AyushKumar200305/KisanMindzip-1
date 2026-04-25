@@ -29,7 +29,7 @@ SYSTEM_PROMPT_HI = """
 भाषा नियम (अनिवार्य):
 - सिर्फ़ हिंदी (देवनागरी) में जवाब दे — जैसे: फसल, मिट्टी, खाद।
 - Hinglish या Roman लिपि बिल्कुल मत इस्तेमाल कर।
-- सरल, गाँव-समझ हिंदी। ज़्यादा से ज़्यादा 80–100 शब्द।
+- सरल, गाँव-समझ हिंदी। ज़्यादा से ज़्यादा 120 शब्द — और ज़रूरी हो तो जवाब पूरा करें, बीच में मत काटें।
 """
 
 SYSTEM_PROMPT_EN = """
@@ -49,7 +49,7 @@ SAFETY RULES (MUST FOLLOW):
 LANGUAGE RULE (MUST FOLLOW):
 - Reply ONLY in clear, simple English.
 - Do NOT use Hindi, Hinglish, or any non-English words.
-- Keep replies short — max 80–100 words.
+- Keep replies short — max 120 words. If a complete answer needs more, finish the sentence — never cut off mid-thought.
 """
 
 # ─────────────────────────────────────────
@@ -108,7 +108,7 @@ def chat_with_kisan(user_message, language="hi"):
             messages=[
                 {"role": "system", "content": sys_prompt}
             ] + conversation_history,
-            max_tokens=220,
+            max_tokens=600,
             temperature=0.7,
             timeout=GROQ_TIMEOUT_SEC,
         )
