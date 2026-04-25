@@ -2020,36 +2020,48 @@
     // ─────────────────────────────────────────
     function renderWeather(data) {
         const el = document.getElementById("weatherResult");
-        el.classList.remove("hidden");
-        if (data.error) {
-            el.className = "mt-3 text-sm text-red-700 bg-red-50 rounded p-3";
-            el.innerText = t("weather.errorPrefix") + data.error;
-            return;
-        }
-        const iconUrl = data.icon ? `https://openweathermap.org/img/wn/${data.icon}@2x.png` : "";
-        const rain = data.rain_prediction || {};
-        const willRain = rain.will_rain_next_24h;
-        const rainSummary = willRain
-            ? t("weather.summaryRain") + (rain.chance_percent != null ? rain.chance_percent + "%" : "")
-            : t("weather.summaryNoRain");
-        el.className = "mt-3 text-sm text-gray-800 bg-green-50 rounded p-3";
-        el.innerHTML = `
-            <div class="flex items-center gap-3 flex-wrap">
-                ${iconUrl ? `<img src="${iconUrl}" alt="" class="w-12 h-12"/>` : ""}
-                <div>
-                    <div class="font-semibold text-green-800">
-                        📍 ${data.location}${data.country ? ", " + data.country : ""}
-                    </div>
-                    <div>🌡️ <b>${Math.round(data.temperature_c)}°C</b>
-                        <span class="text-gray-500">(${t("weather.feelsLike")} ${Math.round(data.feels_like_c)}°C)</span>
-                        — ${data.description || data.condition}</div>
-                    <div class="text-gray-600">💧 ${t("weather.humidity")}: ${data.humidity_percent}% &nbsp; 💨 ${t("weather.wind")}: ${data.wind_kph} km/h</div>
-                    <div class="mt-1 ${willRain ? 'text-blue-700' : 'text-gray-600'}">
-                        ${willRain ? '☔' : '🌤️'} ${rainSummary}
+        try {
+            el.classList.remove("hidden");
+            data = data || {};
+            if (data.error) {
+                el.className = "mt-3 text-sm text-red-700 bg-red-50 rounded p-3";
+                el.innerText = t("weather.errorPrefix") + data.error;
+                return;
+            }
+            const iconUrl = data.icon ? `https://openweathermap.org/img/wn/${escapeHtml(data.icon)}@2x.png` : "";
+            const rain = data.rain_prediction || {};
+            const willRain = !!rain.will_rain_next_24h;
+            const rainSummary = willRain
+                ? t("weather.summaryRain") + (rain.chance_percent != null ? rain.chance_percent + "%" : "")
+                : t("weather.summaryNoRain");
+            const safeNum = (v, suffix) => (v == null || isNaN(Number(v))) ? "—" : (Math.round(Number(v)) + (suffix || ""));
+            const safeStr = (v) => (v == null || v === "") ? "—" : escapeHtml(String(v));
+            el.className = "mt-3 text-sm text-gray-800 bg-green-50 rounded p-3";
+            el.innerHTML = `
+                <div class="flex items-center gap-3 flex-wrap">
+                    ${iconUrl ? `<img src="${iconUrl}" alt="" class="w-12 h-12" onerror="this.style.display='none'"/>` : ""}
+                    <div>
+                        <div class="font-semibold text-green-800">
+                            📍 ${safeStr(data.location)}${data.country ? ", " + escapeHtml(String(data.country)) : ""}
+                        </div>
+                        <div>🌡️ <b>${safeNum(data.temperature_c, "°C")}</b>
+                            <span class="text-gray-500">(${t("weather.feelsLike")} ${safeNum(data.feels_like_c, "°C")})</span>
+                            — ${safeStr(data.description || data.condition)}</div>
+                        <div class="text-gray-600">💧 ${t("weather.humidity")}: ${safeNum(data.humidity_percent, "%")} &nbsp; 💨 ${t("weather.wind")}: ${safeNum(data.wind_kph, " km/h")}</div>
+                        <div class="mt-1 ${willRain ? 'text-blue-700' : 'text-gray-600'}">
+                            ${willRain ? '☔' : '🌤️'} ${rainSummary}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        } catch(e) {
+            try {
+                console.warn("[renderWeather] failed:", e);
+                el.className = "mt-3 text-sm text-red-700 bg-red-50 rounded p-3";
+                el.classList.remove("hidden");
+                el.innerText = t("weather.errorPrefix") + (e && e.message ? e.message : "render failed");
+            } catch(_) {}
+        }
     }
 
     function setWeatherLoading(msg) {
