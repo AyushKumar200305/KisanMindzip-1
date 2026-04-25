@@ -14,6 +14,7 @@ from soil_agent import soil_sense_agent
 from chat import chat_with_kisan, reset_chat
 from crop_doctor import crop_doctor_agent
 from mandi_bhav import mandi_bhav_agent
+from mandi_nearest import get_nearest_mandis
 from sarkari_yojana import sarkari_yojana_agent
 from region_soil import region_soil_advice
 
@@ -520,6 +521,61 @@ def yojana_route():
         return jsonify({"error": _friendly_error(e)}), 500
 
 # ─────────────────────────────────────────
+# 4c. MANDI — NEAREST MANDIS BY GPS (distance-sorted, with fallback prices)
+#     Returns: nearest 3–5 mandis, best mandi, average price,
+#     bilingual selling advice, and a chart-ready payload for Chart.js.
+# ─────────────────────────────────────────
+@app.route("/api/mandi/nearest", methods=["POST", "OPTIONS"])
+def mandi_nearest_route():
+    if request.method == "OPTIONS":
+        return "", 200
+    try:
+        data = request.get_json(silent=True) or {}
+        commodity = (data.get("commodity") or "").strip()
+        lat = data.get("lat")
+        lon = data.get("lon")
+        language = data.get("language", "hi")
+        try:
+            limit = int(data.get("limit") or 5)
+        except (TypeError, ValueError):
+            limit = 5
+
+        if not commodity:
+            return jsonify({"ok": False, "error": "commodity is required"}), 400
+        if lat is None or lon is None:
+            return jsonify({"ok": False, "error": "lat and lon are required"}), 400
+
+        try:
+            lat_f = _safe_float(lat, "lat")
+            lon_f = _safe_float(lon, "lon")
+        except ValueError as ve:
+            return jsonify({"ok": False, "error": str(ve)}), 400
+
+        cache_key = f"mandi_near:{commodity.lower()}:{round(lat_f,2)}:{round(lon_f,2)}:{limit}"
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            result = dict(cached)
+        else:
+            result = get_nearest_mandis(
+                commodity=commodity,
+                lat=lat_f,
+                lon=lon_f,
+                language=language,
+                limit=limit,
+            )
+            if result.get("ok"):
+                _cache_set(cache_key, result, ttl_seconds=900)  # 15 min
+
+        # Always re-tag the language so localStorage changes take effect.
+        result["language"] = "en" if str(language).lower().startswith("en") else "hi"
+        status = 200 if result.get("ok") else 400
+        return jsonify(result), status
+    except Exception as e:
+        logger.exception("Mandi nearest error")
+        return jsonify({"ok": False, "error": _friendly_error(e)}), 500
+
+
+# ─────────────────────────────────────────
 # 4b. MANDI BHAV BY LOCATION (reverse-geocode → state, then reuse mandi agent)
 # ─────────────────────────────────────────
 @app.route("/api/mandi/by-location", methods=["POST", "OPTIONS"])
@@ -788,6 +844,8 @@ def health():
             "POST /api/chat/reset",
             "POST /api/disease",
             "POST /api/mandi",
+            "POST /api/mandi/nearest",
+            "POST /api/mandi/by-location",
             "POST /api/yojana"
         ]
     })

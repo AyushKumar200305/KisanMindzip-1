@@ -18,6 +18,7 @@ AI-powered farmer assistant for Indian farmers. A Flask backend serves a single-
 | `POST /api/chat`, `/api/chat/reset` | `chat.py` | Hindi/Hinglish farming chatbot (Groq llama-3.1-8b-instant) |
 | `POST /api/disease` | `crop_doctor.py` | Detect crop disease from image — returns structured card (Groq llama-4-scout vision) |
 | `POST /api/mandi`, `/api/mandi/by-location` | `mandi_bhav.py` | Live mandi prices (data.gov.in) + selling advice |
+| `POST /api/mandi/nearest` | `mandi_nearest.py` + `mandi_cities.py` | GPS-based 3–5 nearest mandi prices (data.gov.in + estimated fallback) with bilingual advice + chart payload |
 | `POST /api/yojana` | `sarkari_yojana.py` | Government scheme advisor |
 | `GET\|POST /api/weather` | `app.py` | OpenWeather current + 24h rain forecast |
 | `GET\|POST /api/soil-info` | `app.py` | Lat/lon → temperature, humidity (OpenWeather) + pH (SoilGrids/ISRIC) |
@@ -49,3 +50,4 @@ Configured for **autoscale** with: `gunicorn --bind=0.0.0.0:5000 app:app`.
 - 2026-04-25: Removed Crop Doctor (text-based) feature. Kept `/api/disease` (image-based detection with structured card output). Renamed tab to "Disease Detection" / "रोग पहचान".
 - 2026-04-25: Upgraded Mandi Bhav panel — crop and state text inputs replaced with styled dropdowns (12 crops, 28 states). Result now renders structured price cards (min/modal/max per mandi) plus AI advice bubble. Location-detected state is auto-selected in the state dropdown.
 - 2026-04-25: Upgraded Sarkari Yojana panel — query text input replaced with scheme dropdown (10 schemes from schemes.json) + state dropdown. Custom question box toggles open/closed. Results rendered as structured cards (Eligibility / Benefits / Steps) parsed from the verified database response. CSS bubble animation extended to yojanaResult.
+- 2026-04-25: Added GPS-based nearest-mandi feature for the hackathon demo. New `mandi_cities.py` (curated dataset of ~180 Indian mandi cities with lat/lon) and `mandi_nearest.py` (haversine sort, data.gov.in live fetch with state filter, deterministic per-commodity fallback prices, dedup of live-record matches, bilingual advice). New `POST /api/mandi/nearest` route in `app.py` with 15-min in-memory cache and input validation. Frontend got a Chart.js price-comparison bar chart, a "Find Nearest Mandis (GPS)" button, distance-sorted mandi cards, "best mandi" recommendation (which prefers verified live prices over estimated ones), data-source badge, and auto TTS reading the Hindi/English advice.

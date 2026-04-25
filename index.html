@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KisanMind — AI Farmer Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         /* ─────────────────────────────────────────
            Chat-bubble look for every agent result
@@ -437,6 +438,11 @@
                     </div>
                 </div>
 
+                <button type="button" onclick="findNearestMandis(event)"
+                    class="w-full bg-amber-500 text-white py-3 rounded-xl font-semibold text-base hover:bg-amber-600 active:scale-95 transition-all mb-2 shadow">
+                    📍 <span data-i18n="mandi.nearestBtn">Find Nearest Mandis (GPS)</span>
+                </button>
+
                 <button type="button" onclick="testMandi(event)"
                     class="w-full bg-green-700 text-white py-3 rounded-xl font-semibold text-base hover:bg-green-800 active:scale-95 transition-all mb-3"
                     data-i18n="mandi.getBtn">Get Mandi Prices</button>
@@ -674,6 +680,21 @@
             "mandi.marketLabel": "Market",
             "mandi.priceLabel": "Price (Modal)",
             "mandi.bestPrice": "Best price",
+            "mandi.nearestBtn": "📍 Find Nearest Mandis (GPS)",
+            "mandi.nearestTitle": "📍 Nearest Mandis to You",
+            "mandi.nearestFinding": "Finding nearest mandis...",
+            "mandi.distanceLabel": "Distance",
+            "mandi.bestRecommend": "✅ Best Mandi to Sell",
+            "mandi.avgPrice": "Average Price",
+            "mandi.chartTitle": "📊 Price Comparison (₹/quintal)",
+            "mandi.chartModal": "Modal Price",
+            "mandi.chartMin": "Min Price",
+            "mandi.chartMax": "Max Price",
+            "mandi.dataSource": "Data source",
+            "mandi.estimatedNote": "Live prices unavailable — showing estimated prices based on recent trends.",
+            "mandi.mixedNote": "Mix of live mandi prices and estimates where live data was missing.",
+            "mandi.noGps": "Location not supported on this device. Please use the State dropdown instead.",
+            "mandi.gpsDenied": "Location permission denied. Please enable location and try again.",
 
             "yojana.title": "Government Schemes",
             "yojana.subtitle": "Select a scheme and state — get verified, step-by-step information.",
@@ -812,6 +833,21 @@
             "mandi.marketLabel": "मंडी",
             "mandi.priceLabel": "भाव (मोडल)",
             "mandi.bestPrice": "सबसे अच्छा भाव",
+            "mandi.nearestBtn": "📍 पास की मंडियाँ खोजें (GPS)",
+            "mandi.nearestTitle": "📍 आपके पास की मंडियाँ",
+            "mandi.nearestFinding": "पास की मंडियाँ ढूँढी जा रही हैं...",
+            "mandi.distanceLabel": "दूरी",
+            "mandi.bestRecommend": "✅ बेचने के लिए सबसे अच्छी मंडी",
+            "mandi.avgPrice": "औसत भाव",
+            "mandi.chartTitle": "📊 भाव की तुलना (₹/क्विंटल)",
+            "mandi.chartModal": "मोडल भाव",
+            "mandi.chartMin": "न्यूनतम भाव",
+            "mandi.chartMax": "अधिकतम भाव",
+            "mandi.dataSource": "डेटा स्रोत",
+            "mandi.estimatedNote": "लाइव भाव उपलब्ध नहीं — हाल के रुझान पर आधारित अनुमानित भाव दिखाए जा रहे हैं।",
+            "mandi.mixedNote": "कुछ लाइव मंडी भाव और कुछ अनुमानित (जहाँ लाइव डेटा नहीं था)।",
+            "mandi.noGps": "इस डिवाइस पर लोकेशन सपोर्ट नहीं — कृपया राज्य चुनें।",
+            "mandi.gpsDenied": "लोकेशन की अनुमति नहीं मिली। कृपया अनुमति देकर पुनः प्रयास करें।",
 
             "yojana.title": "सरकारी योजना",
             "yojana.subtitle": "योजना और राज्य चुनें — सत्यापित, चरणबद्ध जानकारी पाएँ।",
@@ -1824,6 +1860,218 @@
     // Some browsers populate voices asynchronously — trigger a load
     if ("speechSynthesis" in window) {
         window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // ─────────────────────────────────────────
+    // 4c. Mandi — Nearest Mandis by GPS (with Chart.js, distance, recommendation, TTS)
+    // ─────────────────────────────────────────
+    let _mandiChart = null;
+
+    function escapeAttr(s) {
+        return String(s == null ? "" : s)
+            .replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function _renderMandiChart(chart, isEn) {
+        if (!window.Chart || !chart || !chart.labels || chart.labels.length === 0) return;
+        const ctx = document.getElementById("mandiPriceChart");
+        if (!ctx) return;
+        if (_mandiChart) { try { _mandiChart.destroy(); } catch(e) {} _mandiChart = null; }
+        _mandiChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: chart.labels,
+                datasets: [
+                    {
+                        label: isEn ? "Min" : "न्यूनतम",
+                        data: chart.min_prices,
+                        backgroundColor: "rgba(34,197,94,0.55)",
+                        borderColor: "rgba(22,163,74,1)",
+                        borderWidth: 1,
+                    },
+                    {
+                        label: isEn ? "Modal" : "मोडल",
+                        data: chart.modal_prices,
+                        backgroundColor: "rgba(245,158,11,0.85)",
+                        borderColor: "rgba(217,119,6,1)",
+                        borderWidth: 1,
+                    },
+                    {
+                        label: isEn ? "Max" : "अधिकतम",
+                        data: chart.max_prices,
+                        backgroundColor: "rgba(239,68,68,0.55)",
+                        borderColor: "rgba(220,38,38,1)",
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ₹${ctx.parsed.y}/${isEn ? "quintal" : "क्विंटल"}`,
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: { display: true, text: isEn ? "₹ per quintal" : "₹ प्रति क्विंटल", font: { size: 11 } },
+                        ticks: { font: { size: 10 } },
+                    },
+                    x: { ticks: { font: { size: 10 }, maxRotation: 30, minRotation: 0 } },
+                },
+            },
+        });
+    }
+
+    function _renderNearestMandiCard(data) {
+        const el = document.getElementById("mandiResult");
+        el.classList.remove("hidden");
+        const isEn = (getApiLang() === "en");
+        const list = data.nearest_mandis || [];
+        const advice = isEn ? data.advice_en : data.advice_hi;
+        const dataSourceMsg = (data.fallback_used && data.data_source && data.data_source.indexOf("estimated") !== -1)
+            ? (data.data_source.indexOf("mixed") !== -1 ? t("mandi.mixedNote") : t("mandi.estimatedNote"))
+            : "";
+
+        if (list.length === 0) {
+            el.innerHTML = `<p class="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">${escapeHtml(advice || "No data")}</p>`;
+            return;
+        }
+
+        const bestName = data.best_mandi || "";
+        const cards = list.map((m) => {
+            const isBest = (m.market === bestName);
+            return `
+                <div class="rounded-xl border ${isBest ? "border-amber-400 bg-amber-50" : "border-green-200 bg-white"} p-3 shadow-sm">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold ${isBest ? "text-amber-800" : "text-green-800"} truncate">
+                                ${isBest ? "⭐ " : "📍 "}${escapeHtml(m.market)}
+                            </p>
+                            <p class="text-[11px] text-gray-500 truncate">${escapeHtml(m.district || "")}${m.state ? " · " + escapeHtml(m.state) : ""}</p>
+                            <p class="text-[11px] text-gray-600 mt-1">📏 ${t("mandi.distanceLabel")}: <span class="font-semibold">${escapeHtml(String(m.distance_km))} km</span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-amber-700 leading-none">₹${escapeHtml(String(m.modal_price))}</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">${t("mandi.perQuintal")}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 flex-wrap text-[11px] mt-2">
+                        <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">${t("mandi.chartMin")}: ₹${escapeHtml(String(m.min_price ?? "—"))}</span>
+                        <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded-full">${t("mandi.chartMax")}: ₹${escapeHtml(String(m.max_price ?? "—"))}</span>
+                        <span class="text-gray-400">${escapeHtml(m.source === "estimated" ? (isEn ? "estimated" : "अनुमानित") : "live")}</span>
+                    </div>
+                </div>`;
+        }).join("");
+
+        el.innerHTML = `
+            <div class="space-y-3">
+                <div class="rounded-xl border border-amber-300 bg-amber-50 p-3">
+                    <p class="text-xs font-bold uppercase tracking-wide text-amber-800 opacity-80">${t("mandi.bestRecommend")}</p>
+                    <p class="text-base font-extrabold text-amber-900 mt-0.5">⭐ ${escapeHtml(bestName)} — ₹${escapeHtml(String(data.average_price ? (list.find(m => m.market === bestName)?.modal_price ?? data.average_price) : data.average_price))}/${t("mandi.perQuintal")}</p>
+                    <p class="text-[12px] text-amber-900/80 mt-0.5">${t("mandi.avgPrice")}: ₹${escapeHtml(String(data.average_price))} · ${t("mandi.dataSource")}: ${escapeHtml(data.data_source || "data.gov.in")}</p>
+                </div>
+
+                <div>
+                    <p class="text-sm font-bold text-green-800 mb-2">${t("mandi.nearestTitle")} — ${escapeHtml(data.commodity || "")}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${cards}</div>
+                </div>
+
+                <div class="bg-white border border-green-200 rounded-xl p-3">
+                    <p class="text-sm font-bold text-green-800 mb-1">${t("mandi.chartTitle")}</p>
+                    <div style="position:relative; height: 260px;">
+                        <canvas id="mandiPriceChart"></canvas>
+                    </div>
+                </div>
+
+                ${dataSourceMsg ? `<p class="text-[11px] text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-lg p-2">⚠️ ${escapeHtml(dataSourceMsg)}</p>` : ""}
+
+                <div class="bg-green-50 border border-green-200 rounded-xl p-3">
+                    <p class="text-sm font-bold text-green-800 mb-1">${t("mandi.adviceTitle")}</p>
+                    <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(advice || "")}</p>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <button type="button"
+                            onclick='findNearbyMandi(${JSON.stringify(escapeAttr(data.user_location?.state_guess || ""))}, this)'
+                            class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-3 py-1.5 rounded-lg text-xs shadow-sm">
+                            ${escapeHtml(t("mandi.findNearby"))}
+                        </button>
+                        <button type="button" onclick='speakReply(${JSON.stringify(advice || "")})'
+                            class="text-xs border border-green-600 text-green-700 px-3 py-1.5 rounded hover:bg-green-50">
+                            🔊 ${t("result.listen")}
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+
+        // Render chart after DOM update
+        setTimeout(() => _renderMandiChart(data.chart, isEn), 30);
+        // Auto TTS in selected language
+        if (advice) speakReply(advice);
+    }
+
+    async function findNearestMandis(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const commodity = document.getElementById("commodity").value.trim();
+        if (!commodity) {
+            showResult("mandiResult", t("result.error") + t("mandi.noCommodity"), true);
+            document.getElementById("commodity").focus();
+            return;
+        }
+        if (!navigator.geolocation) {
+            showResult("mandiResult", t("result.error") + t("mandi.noGps"), true);
+            return;
+        }
+        const btn = event && event.currentTarget;
+        if (btn) disableBtn(btn);
+        setLoading("mandiResult", t("mandi.nearestFinding"));
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                try {
+                    const data = await apiFetch(`${BASE_URL}/api/mandi/nearest`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            commodity,
+                            lat: latitude,
+                            lon: longitude,
+                            language: getApiLang(),
+                            limit: 5,
+                        }),
+                    });
+                    if (data && data.ok === false) {
+                        showResult("mandiResult", t("result.error") + (data.error || ""), true);
+                    } else {
+                        // Mirror detected state in the dropdown for context
+                        const stateGuess = data.user_location && data.user_location.state_guess;
+                        if (stateGuess) {
+                            const sel = document.getElementById("mandiState");
+                            const opt = Array.from(sel.options).find(o => o.value.toLowerCase() === String(stateGuess).toLowerCase());
+                            if (opt) sel.value = opt.value;
+                            const badge = document.getElementById("mandiDetectedLoc");
+                            badge.innerText = t("mandi.detected") + stateGuess;
+                            badge.classList.remove("hidden");
+                        }
+                        _renderNearestMandiCard(data);
+                    }
+                } catch (e) {
+                    showResult("mandiResult", t("result.error") + e.message, true);
+                } finally {
+                    if (btn) enableBtn(btn);
+                }
+            },
+            (err) => {
+                if (btn) enableBtn(btn);
+                showResult("mandiResult", t("result.error") + t("mandi.gpsDenied"), true);
+            },
+            { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
+        );
     }
 
     // 4b. Mandi by location
