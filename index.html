@@ -193,6 +193,16 @@
                         class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 cursor-pointer hover:bg-green-950">
                     🔈 <span data-i18n="hdr.autoRead">Auto-Read</span>
                 </button>
+                <label class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 flex items-center gap-1"
+                       data-i18n-title="voice.speed" title="Voice speed">
+                    <span>⚡</span>
+                    <select id="voiceSpeedSel" onchange="setVoiceSpeed(this.value)"
+                            class="bg-green-900 text-white text-sm border-0 outline-none cursor-pointer">
+                        <option value="0.8" data-i18n="voice.speedSlow">Slow</option>
+                        <option value="0.95" selected data-i18n="voice.speedNormal">Normal</option>
+                        <option value="1.2" data-i18n="voice.speedFast">Fast</option>
+                    </select>
+                </label>
                 <button type="button" id="profileBtn" onclick="openProfile(event)"
                         data-i18n-title="profile.openTitle"
                         title="My farm profile"
@@ -838,7 +848,13 @@
 
             "result.listen": "🔊 Listen",
             "result.error": "Error: ",
+            "result.network": "Network error. Please check your connection and try again.",
+            "result.empty": "No response received from server.",
             "common.loading": "Loading...",
+            "voice.speed": "Speed",
+            "voice.speedSlow": "Slow",
+            "voice.speedNormal": "Normal",
+            "voice.speedFast": "Fast",
 
             "profile.openBtn": "My Profile",
             "profile.openTitle": "My farm profile",
@@ -1013,7 +1029,13 @@
 
             "result.listen": "🔊 सुनें",
             "result.error": "त्रुटि: ",
+            "result.network": "नेटवर्क समस्या। अपना इंटरनेट कनेक्शन जाँचकर फिर से कोशिश करें।",
+            "result.empty": "सर्वर से कोई जवाब नहीं मिला।",
             "common.loading": "लोड हो रहा है...",
+            "voice.speed": "गति",
+            "voice.speedSlow": "धीमी",
+            "voice.speedNormal": "सामान्य",
+            "voice.speedFast": "तेज़",
 
             "profile.openBtn": "मेरा प्रोफ़ाइल",
             "profile.openTitle": "मेरा कृषि प्रोफ़ाइल",
@@ -1137,12 +1159,38 @@
         if (btn._origText !== undefined) btn.innerHTML = btn._origText;
     }
 
-    // Unified fetch helper — handles non-200 HTTP codes too
+    // Unified fetch helper — robust against:
+    //  - network failures (offline, DNS, timeouts)
+    //  - non-JSON responses (proxy error pages, server crashes returning HTML)
+    //  - non-2xx HTTP codes
+    // Always throws an Error with a friendly, user-facing message so call
+    // sites can simply show e.message — the page will never break on render
+    // because of an unparseable response.
     async function apiFetch(url, options) {
-        const res = await fetch(url, options);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
-        return data;
+        let res;
+        try {
+            res = await fetch(url, options);
+        } catch (netErr) {
+            // Network-level failure — server unreachable, offline, etc.
+            throw new Error(t("result.network") || "Network error. Please check your connection and try again.");
+        }
+        const ctype = (res.headers.get("content-type") || "").toLowerCase();
+        let data = null;
+        if (ctype.includes("application/json")) {
+            try { data = await res.json(); }
+            catch (_) { data = null; }
+        } else {
+            // Non-JSON body (e.g. HTML proxy error page) — read as text but
+            // don't surface raw HTML to the user.
+            try { await res.text(); } catch (_) {}
+        }
+        if (!res.ok) {
+            const msg = (data && data.error) || `Server error ${res.status}`;
+            throw new Error(msg);
+        }
+        // 2xx but body wasn't JSON — treat as empty success object so call
+        // sites can degrade gracefully instead of crashing.
+        return data || {};
     }
 
     // 1. Soil Agent
@@ -1181,7 +1229,13 @@
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)
             });
-            showResult("soilResult", `${t("soil.recommended")}${data.recommended_crop.toUpperCase()}\n\n${data.agent_advice}`);
+            const crop = (data.recommended_crop || "").toUpperCase();
+            const advice = data.agent_advice || "";
+            if (!crop && !advice) {
+                showResult("soilResult", t("result.error") + (t("result.empty") || "Empty response from server."), true);
+            } else {
+                showResult("soilResult", `${t("soil.recommended")}${crop}\n\n${advice}`);
+            }
         } catch(e) {
             showResult("soilResult", t("result.error") + e.message, true);
         } finally {
@@ -2203,6 +2257,17 @@
     // forever if the user walks away.
     const VOICE_AUTO_STOP_MS = 90 * 1000;
     let _voiceAutoStopTimer = null;
+    // User-controllable speech rate (0.8 slow, 0.95 normal, 1.2 fast).
+    let _voiceRate = 0.95;
+
+    function setVoiceSpeed(val) {
+        const r = parseFloat(val);
+        if (!isNaN(r) && r > 0) _voiceRate = r;
+        // Stop any in-progress speech so the next utterance uses the new rate
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+        _clearVoiceAutoStop();
+        _hideStopVoiceFab();
+    }
 
     function _showStopVoiceFab() {
         const fab = document.getElementById("stopVoiceFab");
@@ -2237,7 +2302,7 @@
             _clearVoiceAutoStop();
             const u = new SpeechSynthesisUtterance(text);
             u.lang = voiceLang;
-            u.rate = 0.95;
+            u.rate = _voiceRate;
             u.pitch = 1;
             // Prefer a voice matching the selected language if available
             const voices = window.speechSynthesis.getVoices();
