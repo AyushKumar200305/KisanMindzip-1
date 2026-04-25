@@ -507,7 +507,16 @@
         <!-- 5. SARKARI YOJANA -->
         <div id="page-yojana" class="page-section hidden">
             <div class="bg-white rounded-xl shadow p-4 sm:p-6">
-                <h2 class="text-xl font-bold text-green-700 mb-1">🏛️ <span data-i18n="yojana.title">Government Schemes</span></h2>
+                <div class="flex items-start justify-between gap-3 mb-1">
+                    <h2 class="text-xl font-bold text-green-700">🏛️ <span data-i18n="yojana.title">Government Schemes</span></h2>
+                    <button type="button" id="yojanaVoiceBtn" onclick="toggleYojanaVoice(event)"
+                        data-i18n-title="yojana.voiceTitle"
+                        title="Read scheme answers aloud"
+                        class="shrink-0 inline-flex items-center gap-1 bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-green-700 active:scale-95 transition-all shadow-sm">
+                        <span id="yojanaVoiceIcon">🔊</span>
+                        <span id="yojanaVoiceLabel" data-i18n="yojana.voiceOn">Voice Reply: ON</span>
+                    </button>
+                </div>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="yojana.subtitle">Select a scheme and state — get verified, step-by-step information.</p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -608,6 +617,7 @@
     // Voice / speaker state — declared early so i18n can read them
     let voiceLang = "hi-IN";        // default Hindi
     let speakerOn = false;          // off by default — user must opt in
+    let yojanaVoiceOn = true;       // schemes-tab voice reply, ON by default
 
     // ─────────────────────────────────────────
     // i18n — UI translations (Hindi / English)
@@ -762,6 +772,9 @@
             "yojana.eligibility": "Eligibility",
             "yojana.benefits": "Benefits",
             "yojana.steps": "How to Apply",
+            "yojana.voiceTitle": "Read scheme answers aloud",
+            "yojana.voiceOn": "Voice Reply: ON",
+            "yojana.voiceOff": "Voice Reply: OFF",
 
             "result.listen": "🔊 Listen",
             "result.error": "Error: ",
@@ -932,6 +945,9 @@
             "yojana.eligibility": "पात्रता",
             "yojana.benefits": "लाभ",
             "yojana.steps": "आवेदन कैसे करें",
+            "yojana.voiceTitle": "योजना का जवाब आवाज़ में सुनें",
+            "yojana.voiceOn": "आवाज़ उत्तर: चालू",
+            "yojana.voiceOff": "आवाज़ उत्तर: बंद",
 
             "result.listen": "🔊 सुनें",
             "result.error": "त्रुटि: ",
@@ -986,6 +1002,8 @@
             const label = speakerOn ? t("hdr.autoReadOn") : t("hdr.autoRead");
             globalBtn.innerHTML = (speakerOn ? "🔊 " : "🔈 ") + label;
         }
+        // Refresh the yojana voice toggle so its ON/OFF label reflects current state + language
+        if (typeof refreshYojanaVoiceBtn === "function") refreshYojanaVoiceBtn();
     }
 
     // Tab switching
@@ -1921,6 +1939,41 @@
         _toggleMicForTarget(event, { inputId: "chatInput", btnId: "micBtn", statusId: "micStatus" });
     }
 
+    function refreshYojanaVoiceBtn() {
+        const btn = document.getElementById("yojanaVoiceBtn");
+        const icon = document.getElementById("yojanaVoiceIcon");
+        const label = document.getElementById("yojanaVoiceLabel");
+        if (!btn || !icon || !label) return;
+        if (yojanaVoiceOn) {
+            icon.innerText = "🔊";
+            label.innerText = t("yojana.voiceOn");
+            btn.classList.remove("bg-gray-400", "hover:bg-gray-500");
+            btn.classList.add("bg-green-600", "hover:bg-green-700");
+        } else {
+            icon.innerText = "🔈";
+            label.innerText = t("yojana.voiceOff");
+            btn.classList.remove("bg-green-600", "hover:bg-green-700");
+            btn.classList.add("bg-gray-400", "hover:bg-gray-500");
+        }
+    }
+
+    function toggleYojanaVoice(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        yojanaVoiceOn = !yojanaVoiceOn;
+        if (!yojanaVoiceOn) {
+            try { window.speechSynthesis.cancel(); } catch(e) {}
+        }
+        refreshYojanaVoiceBtn();
+    }
+
+    // Speak whenever schemes are rendered, controlled by the yojana-tab toggle
+    // (independent from the global header speaker, so the user can keep schemes
+    //  reading aloud even if the rest of the app stays silent).
+    function speakYojanaReply(text) {
+        if (!yojanaVoiceOn || !text) return;
+        speakReply(text);
+    }
+
     function toggleYojanaMic(event) {
         // Auto-open the custom-query box if it's still collapsed, so the user sees what's being typed
         const wrap = document.getElementById("yojanaCustomWrap");
@@ -2288,7 +2341,7 @@
             const plain = data.agent_advice || data.schemes.map(s => s.name + ". " + (s.description || "")).join(" ");
             _resultStore["yojanaResult"] = plain;
             el.innerHTML = `<div>${cards}${listenButtonHTML(plain.substring(0, 300))}</div>`;
-            autoSpeak(plain);
+            speakYojanaReply(plain);
             return;
         }
 
@@ -2356,11 +2409,13 @@
         }).join("");
 
         const advice = raw;
+        _resultStore["yojanaResult"] = advice;
         el.innerHTML = `
             <div>
                 ${schemeHtml}
                 ${listenButtonHTML(advice.substring(0, 300))}
             </div>`;
+        speakYojanaReply(advice);
     }
 
     async function testYojana(event) {
