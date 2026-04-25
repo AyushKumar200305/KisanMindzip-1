@@ -749,6 +749,10 @@
             "yojana.getBtn": "🏛️ Get Scheme Info",
             "yojana.fetching": "Looking up the information...",
             "yojana.noScheme": "Please select a scheme or type a custom question.",
+            "yojana.apply": "Apply / Learn More",
+            "yojana.eligibility": "Eligibility",
+            "yojana.benefits": "Benefits",
+            "yojana.steps": "How to Apply",
 
             "result.listen": "🔊 Listen",
             "result.error": "Error: ",
@@ -915,6 +919,10 @@
             "yojana.getBtn": "🏛️ योजना की जानकारी लें",
             "yojana.fetching": "जानकारी खोजी जा रही है...",
             "yojana.noScheme": "कृपया कोई योजना चुनें या अपना सवाल लिखें।",
+            "yojana.apply": "आवेदन करें / और जानें",
+            "yojana.eligibility": "पात्रता",
+            "yojana.benefits": "लाभ",
+            "yojana.steps": "आवेदन कैसे करें",
 
             "result.listen": "🔊 सुनें",
             "result.error": "त्रुटि: ",
@@ -2195,6 +2203,58 @@
     function renderYojanaCard(data) {
         const el = document.getElementById("yojanaResult");
         el.classList.remove("hidden");
+
+        // ─── New structured path: render clickable cards from data.schemes ───
+        if (Array.isArray(data.schemes) && data.schemes.length > 0) {
+            const applyLabel = t("yojana.apply");
+            const eligLabel  = t("yojana.eligibility");
+            const benLabel   = t("yojana.benefits");
+            const stepsLabel = t("yojana.steps");
+
+            const ul = (items, color) => (items || []).map(it =>
+                `<li class="flex gap-2"><span class="${color}">•</span><span>${escapeHtml(it)}</span></li>`).join("");
+            const ol = (items) => (items || []).map((it, i) =>
+                `<li class="flex gap-2"><span class="font-bold text-green-700 min-w-[1.4em]">${i+1}.</span><span>${escapeHtml(it)}</span></li>`).join("");
+
+            const cards = data.schemes.map(s => {
+                const link = s.link ? `
+                    <a href="${escapeHtml(s.link)}" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-1 mt-3 bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800">
+                       🔗 ${escapeHtml(applyLabel)} →
+                    </a>` : "";
+                return `
+                <div class="border border-green-200 rounded-xl overflow-hidden mb-3 bg-white">
+                    <div class="bg-green-700 text-white px-4 py-2 font-semibold text-sm">📌 ${escapeHtml(s.name || "")}</div>
+                    <div class="p-3 space-y-3">
+                        ${s.description ? `<p class="text-sm text-gray-700">${escapeHtml(s.description)}</p>` : ""}
+                        ${(s.eligibility && s.eligibility.length) ? `
+                        <div>
+                            <p class="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">✅ ${escapeHtml(eligLabel)}</p>
+                            <ul class="text-sm text-gray-700 space-y-1 leading-relaxed">${ul(s.eligibility, "text-green-600")}</ul>
+                        </div>` : ""}
+                        ${(s.benefits && s.benefits.length) ? `
+                        <div>
+                            <p class="text-xs font-bold text-yellow-700 uppercase tracking-wide mb-1">🎁 ${escapeHtml(benLabel)}</p>
+                            <ul class="text-sm text-gray-700 space-y-1 leading-relaxed">${ul(s.benefits, "text-yellow-500")}</ul>
+                        </div>` : ""}
+                        ${(s.steps && s.steps.length) ? `
+                        <div>
+                            <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">📝 ${escapeHtml(stepsLabel)}</p>
+                            <ol class="text-sm text-gray-700 space-y-1 leading-relaxed list-none">${ol(s.steps)}</ol>
+                        </div>` : ""}
+                        ${link}
+                    </div>
+                </div>`;
+            }).join("");
+
+            // Store plain text for the Listen button
+            const plain = data.agent_advice || data.schemes.map(s => s.name + ". " + (s.description || "")).join(" ");
+            _resultStore["yojanaResult"] = plain;
+            el.innerHTML = `<div>${cards}${listenButtonHTML(plain.substring(0, 300))}</div>`;
+            autoSpeak(plain);
+            return;
+        }
+
         const raw = data.agent_advice || "";
         if (!raw) {
             el.innerHTML = `<div class="p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800">No information found. Please try a different query.</div>`;

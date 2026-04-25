@@ -2,7 +2,19 @@
   "schemes": [
     {
       "id": "pm_kisan",
-      "keywords": ["pm-kisan", "pm kisan", "pmkisan", "pradhan mantri kisan samman", "samman nidhi", "6000", "kisan samman", "किसान सम्मान", "पीएम-किसान", "पीएम किसान", "सम्मान निधि"],
+      "keywords": [
+        "pm-kisan",
+        "pm kisan",
+        "pmkisan",
+        "pradhan mantri kisan samman",
+        "samman nidhi",
+        "6000",
+        "kisan samman",
+        "किसान सम्मान",
+        "पीएम-किसान",
+        "पीएम किसान",
+        "सम्मान निधि"
+      ],
       "en": {
         "name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
         "eligibility": [
@@ -40,11 +52,20 @@
           "गाँव/ब्लॉक अधिकारी से सत्यापन कराएँ।",
           "उसी वेबसाइट पर 'Beneficiary Status' से भुगतान देखें।"
         ]
-      }
+      },
+      "link": "https://pmkisan.gov.in"
     },
     {
       "id": "pmfby",
-      "keywords": ["pmfby", "fasal bima", "crop insurance", "pradhan mantri fasal bima", "बीमा", "फसल बीमा", "पीएमएफबीवाई"],
+      "keywords": [
+        "pmfby",
+        "fasal bima",
+        "crop insurance",
+        "pradhan mantri fasal bima",
+        "बीमा",
+        "फसल बीमा",
+        "पीएमएफबीवाई"
+      ],
       "en": {
         "name": "PM Fasal Bima Yojana (PMFBY)",
         "eligibility": [
@@ -80,11 +101,20 @@
           "उस सीज़न की अंतिम तारीख़ से पहले अपना प्रीमियम जमा कराएँ।",
           "नुक़सान होने पर 72 घंटे के अंदर Crop Insurance App, टोल-फ़्री 14447 या बैंक/बीमा कंपनी को सूचित करें।"
         ]
-      }
+      },
+      "link": "https://pmfby.gov.in"
     },
     {
       "id": "kcc",
-      "keywords": ["kcc", "kisan credit card", "किसान क्रेडिट कार्ड", "क्रेडिट कार्ड", "loan", "ऋण", "कर्ज"],
+      "keywords": [
+        "kcc",
+        "kisan credit card",
+        "किसान क्रेडिट कार्ड",
+        "क्रेडिट कार्ड",
+        "loan",
+        "ऋण",
+        "कर्ज"
+      ],
       "en": {
         "name": "Kisan Credit Card (KCC)",
         "eligibility": [
@@ -122,11 +152,22 @@
           "बैंक ज़मीन की जाँच करके फसल और रक़बे के अनुसार क्रेडिट लिमिट तय करता है।",
           "KCC को डेबिट कार्ड की तरह इस्तेमाल कर खेती के लिए पैसा निकालें।"
         ]
-      }
+      },
+      "link": "https://www.myscheme.gov.in/schemes/kcc"
     },
     {
       "id": "pmksy",
-      "keywords": ["pmksy", "krishi sinchai", "drip", "sprinkler", "micro irrigation", "सिंचाई", "टपक", "ड्रिप", "स्प्रिंकलर"],
+      "keywords": [
+        "pmksy",
+        "krishi sinchai",
+        "drip",
+        "sprinkler",
+        "micro irrigation",
+        "सिंचाई",
+        "टपक",
+        "ड्रिप",
+        "स्प्रिंकलर"
+      ],
       "en": {
         "name": "Pradhan Mantri Krishi Sinchayee Yojana (PMKSY) — Per Drop More Crop",
         "eligibility": [
@@ -164,11 +205,19 @@
           "खेत का सर्वे कराएँ और सब्सिडी मंज़ूर कराएँ।",
           "सूचीबद्ध वेंडर से सिस्टम लगवाएँ; सब्सिडी सीधे बैंक खाते में आ जाती है।"
         ]
-      }
+      },
+      "link": "https://pmksy.gov.in"
     },
     {
       "id": "shc",
-      "keywords": ["soil health card", "shc", "soil testing", "मिट्टी जाँच", "मिट्टी स्वास्थ्य", "मृदा स्वास्थ्य"],
+      "keywords": [
+        "soil health card",
+        "shc",
+        "soil testing",
+        "मिट्टी जाँच",
+        "मिट्टी स्वास्थ्य",
+        "मृदा स्वास्थ्य"
+      ],
       "en": {
         "name": "Soil Health Card Scheme",
         "eligibility": [
@@ -204,11 +253,20 @@
           "जाँच के बाद कुछ हफ़्तों में आपके नाम का मृदा स्वास्थ्य कार्ड जारी होता है।",
           "कार्ड पर लिखी खाद की मात्रा के अनुसार ही उर्वरक डालें।"
         ]
-      }
+      },
+      "link": "https://soilhealth.dac.gov.in"
     },
     {
       "id": "enam",
-      "keywords": ["enam", "e-nam", "national agriculture market", "online mandi", "ऑनलाइन मंडी", "ई-नाम", "एनएएम"],
+      "keywords": [
+        "enam",
+        "e-nam",
+        "national agriculture market",
+        "online mandi",
+        "ऑनलाइन मंडी",
+        "ई-नाम",
+        "एनएएम"
+      ],
       "en": {
         "name": "eNAM (National Agriculture Market)",
         "eligibility": [
@@ -244,11 +302,19 @@
           "फसल को मंडी में लाएँ और गुणवत्ता जाँच कराएँ।",
           "खरीदार ऑनलाइन बोली लगाते हैं; सहमति पर पैसा सीधे आपके बैंक खाते में आता है।"
         ]
-      }
+      },
+      "link": "https://enam.gov.in"
     },
     {
       "id": "pmkmy",
-      "keywords": ["pmkmy", "kisan mandhan", "pension", "पेंशन", "मानधन", "किसान मानधन"],
+      "keywords": [
+        "pmkmy",
+        "kisan mandhan",
+        "pension",
+        "पेंशन",
+        "मानधन",
+        "किसान मानधन"
+      ],
       "en": {
         "name": "PM Kisan Maan-Dhan Yojana (PMKMY)",
         "eligibility": [
@@ -286,11 +352,19 @@
           "नामांकन नंबर और किसान पेंशन कार्ड प्राप्त करें।",
           "60 साल तक हर महीने योगदान जारी रखें; उसके बाद पेंशन अपने आप बैंक में आती है।"
         ]
-      }
+      },
+      "link": "https://maandhan.in"
     },
     {
       "id": "pkvy",
-      "keywords": ["pkvy", "paramparagat", "organic", "जैविक", "परम्परागत", "ऑर्गेनिक"],
+      "keywords": [
+        "pkvy",
+        "paramparagat",
+        "organic",
+        "जैविक",
+        "परम्परागत",
+        "ऑर्गेनिक"
+      ],
       "en": {
         "name": "Paramparagat Krishi Vikas Yojana (PKVY)",
         "eligibility": [
@@ -328,11 +402,17 @@
           "क्लस्टर PKVY में रजिस्टर होता है और एक Lead Resource Person नियुक्त होता है।",
           "3 साल की जैविक योजना का पालन करें; सहायता और सर्टिफ़िकेशन चरणों में मिलते हैं।"
         ]
-      }
+      },
+      "link": "https://pgsindia-ncof.gov.in/pkvy/index.aspx"
     },
     {
       "id": "kvp",
-      "keywords": ["kvp", "kisan vikas patra", "किसान विकास पत्र", "विकास पत्र"],
+      "keywords": [
+        "kvp",
+        "kisan vikas patra",
+        "किसान विकास पत्र",
+        "विकास पत्र"
+      ],
       "en": {
         "name": "Kisan Vikas Patra (KVP)",
         "eligibility": [
@@ -370,11 +450,20 @@
           "तुरंत KVP प्रमाण-पत्र (या e-रिकॉर्ड) मिल जाता है।",
           "मियाद पूरी होने पर उसी डाकघर/शाखा में पैसा भुनाएँ।"
         ]
-      }
+      },
+      "link": "https://www.indiapost.gov.in/Financial/pages/content/kisan-vikas-patra.aspx"
     },
     {
       "id": "mnrega",
-      "keywords": ["mnrega", "nrega", "मनरेगा", "नरेगा", "100 days", "guaranteed wage", "रोज़गार गारंटी"],
+      "keywords": [
+        "mnrega",
+        "nrega",
+        "मनरेगा",
+        "नरेगा",
+        "100 days",
+        "guaranteed wage",
+        "रोज़गार गारंटी"
+      ],
       "en": {
         "name": "MGNREGA — Mahatma Gandhi National Rural Employment Guarantee Act",
         "eligibility": [
@@ -410,7 +499,8 @@
           "15 दिनों के अंदर काम मिलना चाहिए; मज़दूरी सीधे बैंक/डाकघर खाते में आती है।",
           "खेत-तालाब/कुआँ जैसे निजी कामों के लिए ग्राम पंचायत में ज़मीन के कागज़ के साथ आवेदन करें।"
         ]
-      }
+      },
+      "link": "https://nrega.nic.in"
     }
   ]
 }
