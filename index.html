@@ -572,10 +572,18 @@
                 <!-- Custom query (collapsed by default, expands when "Other" or typing needed) -->
                 <div id="yojanaCustomWrap" class="mb-3 hidden">
                     <label class="text-sm font-medium text-gray-700 mb-1 block" data-i18n="yojana.queryLabel">Or type your own question</label>
-                    <input id="yojanaQuery" type="text"
-                        data-i18n-placeholder="yojana.queryPlaceholder"
-                        placeholder="e.g. How to apply for PM-KISAN"
-                        class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-400 focus:outline-none"/>
+                    <div class="flex gap-2">
+                        <input id="yojanaQuery" type="text"
+                            data-i18n-placeholder="yojana.queryPlaceholder"
+                            placeholder="e.g. How to apply for PM-KISAN"
+                            class="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-400 focus:outline-none"/>
+                        <button type="button" id="yojanaMicBtn"
+                            onclick="toggleYojanaMic(event)"
+                            data-i18n-title="chat.micTitle"
+                            title="Speak to type"
+                            class="bg-white border border-green-600 text-green-700 px-3 py-2 rounded-lg hover:bg-green-50">🎤</button>
+                    </div>
+                    <p id="yojanaMicStatus" class="text-xs text-gray-500 mt-1 hidden"></p>
                 </div>
                 <button type="button" onclick="toggleYojanaCustom()"
                     class="text-xs text-green-700 underline mb-3 block" data-i18n="yojana.customToggle">
@@ -1826,6 +1834,8 @@
     // ─────────────────────────────────────────
     let recognition = null;
     let isListening = false;
+    // Active target — which input/button/status the current voice session is bound to
+    let _micTarget = { inputId: "chatInput", btnId: "micBtn", statusId: "micStatus" };
 
     function setVoiceLang(lang) {
         voiceLang = lang;
@@ -1836,8 +1846,9 @@
         applyI18n();
     }
 
-    function showMicStatus(text, show=true) {
-        const el = document.getElementById("micStatus");
+    function showMicStatus(text, show=true, statusId) {
+        const id = statusId || _micTarget.statusId;
+        const el = document.getElementById(id);
         if (!el) return;
         el.innerText = text;
         el.classList.toggle("hidden", !show);
@@ -1854,9 +1865,11 @@
 
         r.onstart = () => {
             isListening = true;
-            const btn = document.getElementById("micBtn");
-            btn.classList.remove("bg-white", "text-green-700");
-            btn.classList.add("bg-red-500", "text-white", "animate-pulse");
+            const btn = document.getElementById(_micTarget.btnId);
+            if (btn) {
+                btn.classList.remove("bg-white", "text-green-700");
+                btn.classList.add("bg-red-500", "text-white", "animate-pulse");
+            }
             showMicStatus(t("chat.listening"));
         };
         r.onerror = (e) => {
@@ -1864,23 +1877,32 @@
         };
         r.onend = () => {
             isListening = false;
-            const btn = document.getElementById("micBtn");
-            btn.classList.add("bg-white", "text-green-700");
-            btn.classList.remove("bg-red-500", "text-white", "animate-pulse");
-            setTimeout(() => showMicStatus("", false), 1500);
+            const btn = document.getElementById(_micTarget.btnId);
+            if (btn) {
+                btn.classList.add("bg-white", "text-green-700");
+                btn.classList.remove("bg-red-500", "text-white", "animate-pulse");
+            }
+            const sid = _micTarget.statusId;
+            setTimeout(() => showMicStatus("", false, sid), 1500);
         };
         r.onresult = (event) => {
             const text = event.results[0][0].transcript;
-            const input = document.getElementById("chatInput");
+            const input = document.getElementById(_micTarget.inputId);
+            if (!input) return;
             input.value = (input.value ? input.value + " " : "") + text;
             input.focus();
         };
         return r;
     }
 
-    function toggleMic(event) {
+    function _toggleMicForTarget(event, target) {
         event.preventDefault();
         event.stopPropagation();
+        // If a session is already running on a different target, stop it first
+        if (isListening && recognition && _micTarget.btnId !== target.btnId) {
+            try { recognition.stop(); } catch(e) {}
+        }
+        _micTarget = target;
         if (!recognition) recognition = initRecognition();
         if (!recognition) {
             showMicStatus(t("chat.micUnsupported"));
@@ -1892,6 +1914,20 @@
         } else {
             try { recognition.start(); } catch(e) { showMicStatus("Mic start error: " + e.message); }
         }
+    }
+
+    function toggleMic(event) {
+        _toggleMicForTarget(event, { inputId: "chatInput", btnId: "micBtn", statusId: "micStatus" });
+    }
+
+    function toggleYojanaMic(event) {
+        // Auto-open the custom-query box if it's still collapsed, so the user sees what's being typed
+        const wrap = document.getElementById("yojanaCustomWrap");
+        if (wrap && wrap.classList.contains("hidden")) {
+            wrap.classList.remove("hidden");
+            _yojanaCustomOpen = true;
+        }
+        _toggleMicForTarget(event, { inputId: "yojanaQuery", btnId: "yojanaMicBtn", statusId: "yojanaMicStatus" });
     }
 
     function toggleSpeaker(event) {
