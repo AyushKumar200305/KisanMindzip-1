@@ -19,6 +19,98 @@ from region_soil import region_soil_advice
 
 OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
 
+# ─────────────────────────────────────────
+# Treatment mapping for Disease Detection
+# (extends output only — does NOT modify detection logic)
+# ─────────────────────────────────────────
+TREATMENT_MAP = [
+    (["leaf spot", "blight", "rust", "mildew", "smut", "rot", "fungus", "fungal",
+      "फफूंद", "फफूँद", "धब्बा", "झुलसा", "गलन", "रतुआ", "कंडुआ"],
+     {
+         "type_en": "Fungicide",
+         "type_hi": "फफूंदनाशक",
+         "organic_en": "Spray Neem oil (5 ml/litre water) or Trichoderma viride (5 g/litre) every 7 days.",
+         "organic_hi": "नीम का तेल (5 मिली/लीटर पानी) या ट्राइकोडर्मा (5 ग्राम/लीटर) हर 7 दिन में छिड़कें।",
+         "chemical_en": "Spray Mancozeb 75% WP (2 g/litre) or Carbendazim 50% WP (1 g/litre). Repeat after 10–12 days if needed.",
+         "chemical_hi": "मैन्कोजेब 75% WP (2 ग्राम/लीटर) या कार्बेन्डाजिम 50% WP (1 ग्राम/लीटर) छिड़कें। 10–12 दिन बाद ज़रूरत हो तो दोबारा करें।",
+         "shop_query_en": "fungicide shop",
+         "shop_query_hi": "फफूंदनाशक की दुकान",
+     }),
+    (["yellow", "chlorosis", "nitrogen deficiency",
+      "पीला", "पीली", "पीलापन", "नाइट्रोजन की कमी", "पोषण की कमी"],
+     {
+         "type_en": "Nitrogen Fertilizer (Urea)",
+         "type_hi": "नाइट्रोजन उर्वरक (यूरिया)",
+         "organic_en": "Apply well-rotted farmyard manure or vermicompost (1–2 kg per plant). Spray panchagavya 3% as foliar feed.",
+         "organic_hi": "गोबर की पकी हुई खाद या वर्मी-कम्पोस्ट (1–2 किग्रा प्रति पौधा) डालें। पंचगव्य 3% पत्तियों पर छिड़कें।",
+         "chemical_en": "Apply Urea 46% — 25–50 kg/acre as top dressing, or spray 2% urea solution (20 g/litre) on leaves.",
+         "chemical_hi": "यूरिया 46% — 25–50 किग्रा/एकड़ टॉप-ड्रेसिंग में डालें, या 2% यूरिया घोल (20 ग्राम/लीटर) पत्तियों पर छिड़कें।",
+         "shop_query_en": "urea fertilizer shop",
+         "shop_query_hi": "यूरिया खाद की दुकान",
+     }),
+    (["pest", "insect", "aphid", "borer", "caterpillar", "whitefly", "thrips", "mite",
+      "कीट", "कीड़ा", "सूँडी", "सुंडी", "इल्ली", "माहू", "सफेद मक्खी"],
+     {
+         "type_en": "Pesticide / Insecticide",
+         "type_hi": "कीटनाशक",
+         "organic_en": "Spray Neem oil (5 ml/litre) + soap (1 g/litre), or release Trichogramma cards. Use yellow sticky traps.",
+         "organic_hi": "नीम का तेल (5 मिली/लीटर) + साबुन (1 ग्राम/लीटर) छिड़कें, या ट्राइकोग्रामा कार्ड लगाएँ। पीले स्टिकी ट्रैप का उपयोग करें।",
+         "chemical_en": "Spray Imidacloprid 17.8% SL (0.3 ml/litre) or Chlorpyriphos 20% EC (2 ml/litre). Follow safety waiting period.",
+         "chemical_hi": "इमिडाक्लोप्रिड 17.8% SL (0.3 मिली/लीटर) या क्लोरपाइरीफॉस 20% EC (2 मिली/लीटर) छिड़कें। सुरक्षा प्रतीक्षा-अवधि का पालन करें।",
+         "shop_query_en": "pesticide shop",
+         "shop_query_hi": "कीटनाशक की दुकान",
+     }),
+    (["bacteria", "bacterial", "wilt",
+      "जीवाणु", "बैक्टीरिया", "उकठा", "मुरझान"],
+     {
+         "type_en": "Bactericide",
+         "type_hi": "जीवाणुनाशक",
+         "organic_en": "Drench soil with cow-urine + jaggery solution (1:10) or Pseudomonas fluorescens (10 g/litre).",
+         "organic_hi": "गोमूत्र + गुड़ का घोल (1:10) या स्यूडोमोनास फ्लोरोसेंस (10 ग्राम/लीटर) मिट्टी में डालें।",
+         "chemical_en": "Spray Streptocycline (0.1 g/litre) + Copper Oxychloride (3 g/litre). Repeat after 10 days.",
+         "chemical_hi": "स्ट्रेप्टोसाइक्लिन (0.1 ग्राम/लीटर) + कॉपर ऑक्सीक्लोराइड (3 ग्राम/लीटर) छिड़कें। 10 दिन बाद दोहराएँ।",
+         "shop_query_en": "agriculture medicine shop",
+         "shop_query_hi": "कृषि दवाई की दुकान",
+     }),
+    (["virus", "viral", "mosaic",
+      "वायरस", "मोज़ेक", "मोजेक"],
+     {
+         "type_en": "Virus management — vector control",
+         "type_hi": "वायरस प्रबंधन — वाहक कीट नियंत्रण",
+         "organic_en": "Remove and burn infected plants. Spray Neem oil (5 ml/litre) to control sucking pests that spread the virus.",
+         "organic_hi": "संक्रमित पौधे उखाड़ कर जला दें। वायरस फैलाने वाले रसचूसक कीटों के लिए नीम तेल (5 मिली/लीटर) छिड़कें।",
+         "chemical_en": "Control vectors with Imidacloprid 17.8% SL (0.3 ml/litre). No direct chemical cure for the virus itself.",
+         "chemical_hi": "वाहक कीटों के लिए इमिडाक्लोप्रिड 17.8% SL (0.3 मिली/लीटर) छिड़कें। वायरस का कोई सीधा रासायनिक इलाज नहीं है।",
+         "shop_query_en": "pesticide shop",
+         "shop_query_hi": "कीटनाशक की दुकान",
+     }),
+]
+
+DEFAULT_TREATMENT = {
+    "type_en": "General fertilizer / treatment",
+    "type_hi": "सामान्य खाद / उपचार",
+    "organic_en": "Apply well-rotted compost or vermicompost. Spray Jeevamrit / Panchagavya as a tonic every 10 days.",
+    "organic_hi": "अच्छी पकी कम्पोस्ट या वर्मी-कम्पोस्ट डालें। हर 10 दिन में जीवामृत / पंचगव्य टॉनिक छिड़कें।",
+    "chemical_en": "Visit your local Krishi Vigyan Kendra (KVK) or agri-shop with the photo to get an exact recommendation.",
+    "chemical_hi": "सही सलाह के लिए तस्वीर लेकर अपने नज़दीकी कृषि विज्ञान केंद्र (KVK) या कृषि की दुकान पर जाएँ।",
+    "shop_query_en": "agriculture fertilizer shop",
+    "shop_query_hi": "खाद की दुकान",
+}
+
+HEALTHY_KEYWORDS = ["no disease", "healthy", "appears healthy",
+                    "कोई रोग नहीं", "स्वस्थ"]
+
+
+def _classify_treatment(disease_name: str, cause: str):
+    """Return treatment dict or None when crop looks healthy."""
+    text = f"{disease_name} {cause}".lower()
+    if any(k in text for k in HEALTHY_KEYWORDS):
+        return None
+    for keywords, treatment in TREATMENT_MAP:
+        if any(k.lower() in text for k in keywords):
+            return treatment
+    return DEFAULT_TREATMENT
+
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
@@ -185,6 +277,21 @@ def disease_route():
         if os.path.exists(image_path):
             os.remove(image_path)
 
+    is_en = (language or "").lower().startswith("en")
+    treatment = _classify_treatment(
+        result.get("disease_name", ""),
+        result.get("cause", ""),
+    )
+
+    extra = {}
+    if treatment is not None:
+        extra = {
+            "treatment_type": treatment["type_en"]      if is_en else treatment["type_hi"],
+            "organic":        treatment["organic_en"]   if is_en else treatment["organic_hi"],
+            "chemical":       treatment["chemical_en"]  if is_en else treatment["chemical_hi"],
+            "shop_query":     treatment["shop_query_en"] if is_en else treatment["shop_query_hi"],
+        }
+
     return jsonify({
         "disease_name": result.get("disease_name", ""),
         "cause":        result.get("cause", ""),
@@ -192,6 +299,7 @@ def disease_route():
         "prevention":   result.get("prevention", ""),
         "diagnosis":    result.get("diagnosis", ""),
         "crop":         result.get("crop", ""),
+        **extra,
     })
 
 # ─────────────────────────────────────────

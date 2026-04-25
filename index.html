@@ -638,8 +638,14 @@
             "disease.cardDisease": "🌿 Disease Name",
             "disease.cardCause": "⚠️ Cause",
             "disease.cardSolution": "💊 Solution",
+            "disease.cardTreatment": "💊 Treatment Type",
+            "disease.cardOrganic": "🌱 Organic Solution",
+            "disease.cardChemical": "🧪 Chemical Solution",
             "disease.cardPrevention": "🛡️ Prevention",
             "disease.healthy": "No disease detected — crop appears healthy ✅",
+            "disease.findShops": "📍 Find Fertilizer Near Me",
+            "disease.askCity": "Please enter your city to find nearby shops:",
+            "disease.locating": "Finding nearby shops...",
 
             "mandi.title": "Mandi Prices",
             "mandi.subtitle": "Live mandi prices and selling advice.",
@@ -760,8 +766,14 @@
             "disease.cardDisease": "🌿 रोग का नाम",
             "disease.cardCause": "⚠️ कारण",
             "disease.cardSolution": "💊 समाधान",
+            "disease.cardTreatment": "💊 उपचार का प्रकार",
+            "disease.cardOrganic": "🌱 जैविक उपाय",
+            "disease.cardChemical": "🧪 रासायनिक उपाय",
             "disease.cardPrevention": "🛡️ बचाव",
             "disease.healthy": "कोई रोग नहीं मिला — फसल स्वस्थ दिखती है ✅",
+            "disease.findShops": "📍 नजदीकी खाद की दुकान खोजें",
+            "disease.askCity": "नज़दीकी दुकान खोजने के लिए अपना शहर लिखें:",
+            "disease.locating": "नज़दीकी दुकानें खोजी जा रही हैं...",
 
             "mandi.title": "मंडी भाव",
             "mandi.subtitle": "लाइव मंडी कीमतें और बेचने की सलाह।",
@@ -1092,10 +1104,18 @@
             return;
         }
 
-        const labelDisease = isEn ? "🌿 Disease Name"  : "🌿 रोग का नाम";
-        const labelCause   = isEn ? "⚠️ Cause"         : "⚠️ कारण";
-        const labelSol     = isEn ? "💊 Solution"       : "💊 समाधान";
-        const labelPrev    = isEn ? "🛡️ Prevention"    : "🛡️ बचाव";
+        const labelDisease   = isEn ? "🌿 Disease Name"     : "🌿 रोग का नाम";
+        const labelCause     = isEn ? "⚠️ Cause"             : "⚠️ कारण";
+        const labelSol       = isEn ? "💊 Solution"          : "💊 समाधान";
+        const labelTreatment = isEn ? "💊 Treatment Type"    : "💊 उपचार का प्रकार";
+        const labelOrganic   = isEn ? "🌱 Organic Solution"  : "🌱 जैविक उपाय";
+        const labelChemical  = isEn ? "🧪 Chemical Solution" : "🧪 रासायनिक उपाय";
+        const labelPrev      = isEn ? "🛡️ Prevention"        : "🛡️ बचाव";
+
+        const treatmentType = data.treatment_type || "";
+        const organic       = data.organic || "";
+        const chemical      = data.chemical || "";
+        const shopQuery     = data.shop_query || "";
 
         function row(label, value, colorClass) {
             if (!value) return "";
@@ -1106,15 +1126,31 @@
                 </div>`;
         }
 
+        const findShopsBtn = shopQuery ? `
+            <button type="button"
+                onclick="findFertilizerShops(${escapeHtml(JSON.stringify(shopQuery))}, this)"
+                class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-sm flex items-center gap-2">
+                ${escapeHtml(t("disease.findShops"))}
+            </button>` : "";
+
+        // Show solution row only as a fallback when we don't have organic/chemical fields
+        const solutionRow = (!organic && !chemical && solution)
+            ? row(labelSol, solution, "border-blue-300 bg-blue-50 text-blue-900")
+            : "";
+
         resultEl.innerHTML = `
             <div class="space-y-2">
-                ${row(labelDisease, diseaseName,  "border-green-300 bg-green-50 text-green-900")}
-                ${row(labelCause,   cause,         "border-yellow-300 bg-yellow-50 text-yellow-900")}
-                ${row(labelSol,     solution,      "border-blue-300 bg-blue-50 text-blue-900")}
-                ${row(labelPrev,    prevention,    "border-purple-300 bg-purple-50 text-purple-900")}
-                <div class="flex justify-end">
+                ${row(labelDisease,   diseaseName,    "border-green-300 bg-green-50 text-green-900")}
+                ${row(labelCause,     cause,          "border-yellow-300 bg-yellow-50 text-yellow-900")}
+                ${row(labelTreatment, treatmentType,  "border-amber-300 bg-amber-50 text-amber-900")}
+                ${row(labelOrganic,   organic,        "border-emerald-300 bg-emerald-50 text-emerald-900")}
+                ${row(labelChemical,  chemical,       "border-blue-300 bg-blue-50 text-blue-900")}
+                ${solutionRow}
+                ${row(labelPrev,      prevention,     "border-purple-300 bg-purple-50 text-purple-900")}
+                <div class="flex flex-wrap justify-between gap-2 pt-1">
+                    ${findShopsBtn}
                     <button type="button"
-                        onclick="speakReply(${escapeHtml(JSON.stringify(diseaseName + '. ' + cause + '. ' + solution))})"
+                        onclick="speakReply(${escapeHtml(JSON.stringify(diseaseName + '. ' + cause + '. ' + (organic || solution) + '. ' + chemical))})"
                         class="bg-white border border-green-600 text-green-700 px-3 py-1 rounded text-xs hover:bg-green-50">
                         🔊 Sunें / Listen
                     </button>
@@ -1122,6 +1158,44 @@
             </div>`;
 
         speakReply(diseaseName + ". " + cause);
+    }
+
+    // Build a Google Maps search URL and open it in a new tab.
+    // Tries browser geolocation first; falls back to asking for a city.
+    function findFertilizerShops(shopQuery, btn) {
+        const fallbackQuery = (diseaseLang === "en") ? "fertilizer shop" : "खाद की दुकान";
+        const query = (shopQuery && shopQuery.trim()) || fallbackQuery;
+
+        function openMapsAtCoords(lat, lng) {
+            const url = `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${lat},${lng},14z`;
+            window.open(url, "_blank", "noopener");
+        }
+
+        function openMapsForCity(city) {
+            if (!city) return;
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query + " near " + city)}`;
+            window.open(url, "_blank", "noopener");
+        }
+
+        function askCity() {
+            const city = prompt(t("disease.askCity"));
+            if (city && city.trim()) openMapsForCity(city.trim());
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            const original = btn.innerHTML;
+            btn.innerHTML = escapeHtml(t("disease.locating"));
+            setTimeout(() => { btn.disabled = false; btn.innerHTML = original; }, 6000);
+        }
+
+        if (!navigator.geolocation) { askCity(); return; }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => openMapsAtCoords(pos.coords.latitude, pos.coords.longitude),
+            ()    => askCity(),
+            { timeout: 6000, maximumAge: 60000 }
+        );
     }
 
     async function detectDisease(event) {
