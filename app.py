@@ -31,7 +31,8 @@ def soil_route():
             temperature=data["temperature"],
             humidity=data["humidity"],
             ph=data["ph"],
-            rainfall=data["rainfall"]
+            rainfall=data["rainfall"],
+            language=data.get("language", "hi")
         )
         return jsonify(result)
     except Exception as e:
@@ -47,7 +48,8 @@ def chat_route():
     try:
         data = request.get_json()
         message = data.get("message", "")
-        reply = chat_with_kisan(message)
+        language = data.get("language", "hi")
+        reply = chat_with_kisan(message, language=language)
         return jsonify({"reply": reply})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -75,13 +77,14 @@ def crop_doctor_route():
 
     image = request.files["image"]
     crop_name = request.form.get("crop_name", None)
+    language = request.form.get("language", "hi")
 
     # Save image temporarily
     image_path = f"temp_{image.filename}"
     image.save(image_path)
 
     try:
-        result = crop_doctor_agent(image_path, crop_name)
+        result = crop_doctor_agent(image_path, crop_name, language=language)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -102,7 +105,8 @@ def mandi_route():
         data = request.get_json()
         result = mandi_bhav_agent(
             commodity=data["commodity"],
-            state=data["state"]
+            state=data["state"],
+            language=data.get("language", "hi")
         )
         return jsonify(result)
     except Exception as e:
@@ -119,7 +123,8 @@ def yojana_route():
         data = request.get_json()
         result = sarkari_yojana_agent(
             query=data["query"],
-            state=data.get("state", None)
+            state=data.get("state", None),
+            language=data.get("language", "hi")
         )
         return jsonify(result)
     except Exception as e:
@@ -160,7 +165,11 @@ def mandi_by_location_route():
             return jsonify({"error": "Could not detect state from location."}), 400
 
         # Reuse the existing mandi agent — no change to /api/mandi
-        result = mandi_bhav_agent(commodity=commodity, state=state)
+        result = mandi_bhav_agent(
+            commodity=commodity,
+            state=state,
+            language=data.get("language", "hi")
+        )
         result["detected_state"] = state
         return jsonify(result)
     except requests.RequestException as e:

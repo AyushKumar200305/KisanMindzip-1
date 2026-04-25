@@ -4,7 +4,15 @@ from predict import predict_crop
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "missing")
 
-def soil_sense_agent(N, P, K, temperature, humidity, ph, rainfall):
+def _lang_rule(language):
+    if (language or "").lower().startswith("en"):
+        return ("\n\nIMPORTANT: Reply ONLY in clear, simple English. "
+                "Do NOT use Hindi or Hinglish words.")
+    return ("\n\nIMPORTANT: Reply ONLY in Hindi (Devanagari script). "
+            "Use simple, village-friendly Hindi.")
+
+
+def soil_sense_agent(N, P, K, temperature, humidity, ph, rainfall, language="hi"):
     # Step 1: Get crop from ML model
     crop = predict_crop(N, P, K, temperature, humidity, ph, rainfall)
     
@@ -36,15 +44,18 @@ def soil_sense_agent(N, P, K, temperature, humidity, ph, rainfall):
        - Kaunsa time best hai (subah/shaam)
 
     Short aur clear rakho. Max 150 words total.
-    """
-    
+    """ + _lang_rule(language)
+
     # Step 3: Get Groq response
+    sys_msg = ("You are an expert Indian agronomist. Always reply in clear, simple English."
+               if (language or "").lower().startswith("en") else
+               "Tu ek expert Indian Kisan Sevak hai. Hamesha shuddh Hindi (Devanagari) mein jawab de. Simple aur clear bhasha use kar.")
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
             {
                 "role": "system",
-                "content": "Tu ek expert Indian Kisan Sevak hai. Hamesha Hindi/Hinglish mein jawab de. Simple aur clear bhasha use kar."
+                "content": sys_msg
             },
             {
                 "role": "user",

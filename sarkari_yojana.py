@@ -50,7 +50,15 @@ SCHEMES_DATABASE = """
     - Apply: state agriculture department
 """
 
-def sarkari_yojana_agent(query, state=None):
+def _lang_rule(language):
+    if (language or "").lower().startswith("en"):
+        return ("\n\nIMPORTANT: Reply ONLY in clear, simple English. "
+                "Do NOT use Hindi or Hinglish words.")
+    return ("\n\nIMPORTANT: Reply ONLY in Hindi (Devanagari script). "
+            "Use simple, village-friendly Hindi.")
+
+
+def sarkari_yojana_agent(query, state=None, language="hi"):
     """
     Answer farmer questions about government schemes
     query: farmer's question about schemes
@@ -83,14 +91,18 @@ def sarkari_yojana_agent(query, state=None):
        - Website ya center ka naam
     
     Max 150 words. Bilkul simple bhasha.
-    """
-    
+    """ + _lang_rule(language)
+
+    sys_msg = ("You are an expert Indian government-schemes advisor. Always reply in clear, simple English."
+               if (language or "").lower().startswith("en") else
+               "Tu ek expert Government Schemes Advisor hai. Farmers ko shuddh Hindi (Devanagari) mein sarkari yojanaon ki sahi jaankari deta hai.")
+
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
             {
                 "role": "system",
-                "content": "Tu ek expert Government Schemes Advisor hai. Farmers ko Hindi/Hinglish mein sarkari yojanaon ki sahi jaankari deta hai."
+                "content": sys_msg
             },
             {
                 "role": "user",

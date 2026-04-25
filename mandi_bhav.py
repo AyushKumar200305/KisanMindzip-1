@@ -22,7 +22,15 @@ def get_mandi_prices(commodity, state):
     except Exception as e:
         return []
 
-def mandi_bhav_agent(commodity, state):
+def _lang_rule(language):
+    if (language or "").lower().startswith("en"):
+        return ("\n\nIMPORTANT: Reply ONLY in clear, simple English. "
+                "Do NOT use Hindi or Hinglish words.")
+    return ("\n\nIMPORTANT: Reply ONLY in Hindi (Devanagari script). "
+            "Use simple, village-friendly Hindi.")
+
+
+def mandi_bhav_agent(commodity, state, language="hi"):
     """
     Get mandi prices and give AI-powered advice
     commodity: e.g. 'Wheat', 'Rice', 'Tomato'
@@ -65,14 +73,18 @@ def mandi_bhav_agent(commodity, state):
        - Quick farming business advice
     
     Max 120 words. Simple bhasha.
-    """
-    
+    """ + _lang_rule(language)
+
+    sys_msg = ("You are an expert Indian mandi (market) advisor. Always reply in clear, simple English."
+               if (language or "").lower().startswith("en") else
+               "Tu ek expert Mandi Advisor hai jo farmers ko best price aur selling strategy shuddh Hindi (Devanagari) mein batata hai.")
+
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
             {
                 "role": "system",
-                "content": "Tu ek expert Mandi Advisor hai jo farmers ko best price aur selling strategy batata hai Hindi/Hinglish mein."
+                "content": sys_msg
             },
             {
                 "role": "user",
