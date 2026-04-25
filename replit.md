@@ -14,6 +14,7 @@ AI-powered farmer assistant for Indian farmers. A Flask backend serves a single-
 | Route | Module | Purpose |
 | --- | --- | --- |
 | `POST /api/soil` | `soil_agent.py` + `predict.py` | Recommend crop from N/P/K + climate + advice |
+| `POST /api/region-soil` | `region_soil.py` + `soil_data.json` | Region-based crop suggestions from city or GPS — pure dataset lookup, bilingual (no LLM) |
 | `POST /api/chat`, `/api/chat/reset` | `chat.py` | Hindi/Hinglish farming chatbot (Groq llama-3.1-8b-instant) |
 | `POST /api/disease` | `crop_doctor.py` | Detect crop disease from image — returns structured card (Groq llama-4-scout vision) |
 | `POST /api/mandi`, `/api/mandi/by-location` | `mandi_bhav.py` | Live mandi prices (data.gov.in) + selling advice |

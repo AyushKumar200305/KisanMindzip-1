@@ -15,6 +15,7 @@ from chat import chat_with_kisan, reset_chat
 from crop_doctor import crop_doctor_agent
 from mandi_bhav import mandi_bhav_agent
 from sarkari_yojana import sarkari_yojana_agent
+from region_soil import region_soil_advice
 
 OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
 
@@ -428,6 +429,29 @@ def soil_info_route():
     result.setdefault("rainfall", 200)
 
     return jsonify(result)
+
+# ─────────────────────────────────────────
+# 8. REGION-BASED SOIL ADVISOR (city or GPS → state-level structured advice)
+#    Pure dataset lookup — no LLM, no random output.
+# ─────────────────────────────────────────
+@app.route("/api/region-soil", methods=["POST", "OPTIONS"])
+def region_soil_route():
+    if request.method == "OPTIONS":
+        return "", 200
+    try:
+        data = request.get_json(silent=True) or {}
+        city = (data.get("city") or "").strip() or None
+        lat = data.get("lat")
+        lon = data.get("lon")
+        language = data.get("language", "hi")
+
+        result = region_soil_advice(city=city, lat=lat, lon=lon, language=language)
+        status = 200 if result.get("ok") else 400
+        return jsonify(result), status
+    except Exception as e:
+        logger.exception("Region soil error")
+        return jsonify({"ok": False, "error": "Service error — please try again."}), 500
+
 
 # ─────────────────────────────────────────
 # HEALTH CHECK

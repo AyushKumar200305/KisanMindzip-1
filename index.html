@@ -229,6 +229,35 @@
                     data-i18n="soil.getBtn">Get Recommendation</button>
                 <div id="soilResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
             </div>
+
+            <!-- Region-based crop suggestions (city / GPS → state advice) -->
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6 mt-4">
+                <h2 class="text-lg sm:text-xl font-bold text-green-700 mb-1">🗺️ <span data-i18n="region.title">Region-Based Crop Suggestions</span></h2>
+                <p class="text-gray-500 text-sm mb-4" data-i18n="region.subtitle">Type your city (English or Hindi) or use GPS — get the soil type and best crops for your state.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-600" data-i18n="region.cityLabel">City / Town</label>
+                        <input id="regionCity" type="text"
+                            data-i18n-placeholder="region.cityPlaceholder"
+                            placeholder="e.g. Indore / इंदौर"
+                            class="w-full border border-gray-300 rounded-lg p-2 mt-1 text-sm focus:ring-2 focus:ring-green-400 focus:outline-none"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();getRegionAdvice(event);}"/>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="getRegionAdvice(event)"
+                            class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
+                            data-i18n="region.getBtn">🌾 Get Region Advice</button>
+                        <button type="button" onclick="getRegionAdviceByGPS(event)"
+                            title="Use my location"
+                            class="bg-white border border-green-600 text-green-700 px-3 py-2 rounded-lg text-sm hover:bg-green-50"
+                            data-i18n="region.useLocation">📍 Use My Location</button>
+                    </div>
+                </div>
+
+                <p id="regionNote" class="text-xs text-gray-500 mt-2 hidden"></p>
+                <div id="regionResult" class="mt-4 hidden"></div>
+            </div>
         </div>
 
         <!-- 2. CHAT -->
@@ -569,6 +598,22 @@
             "soil.geoUnsupported": "Geolocation not supported in this browser.",
             "soil.locationDenied": "Location denied: ",
 
+            "region.title": "Region-Based Crop Suggestions",
+            "region.subtitle": "Type your city (English or Hindi) or use GPS — get the soil type and best crops for your state.",
+            "region.cityLabel": "City / Town",
+            "region.cityPlaceholder": "e.g. Indore / इंदौर",
+            "region.getBtn": "🌾 Get Region Advice",
+            "region.useLocation": "📍 Use My Location",
+            "region.fetching": "⏳ Looking up region data...",
+            "region.locating": "📍 Detecting your location...",
+            "region.cardLocation": "📍 Location",
+            "region.cardSoil": "🌱 Soil Type",
+            "region.cardKharif": "🌾 Kharif (Monsoon) Crops",
+            "region.cardRabi": "🌿 Rabi (Winter) Crops",
+            "region.cardZaid": "🌻 Zaid (Summer) Crops",
+            "region.cardAdvice": "💡 Practical Advice",
+            "region.none": "—",
+
             "chat.title": "Kisan Chatbot",
             "chat.subtitle": "Ask anything about farming — answers in your selected language.",
             "chat.placeholder": "Type your question or press 🎤...",
@@ -673,6 +718,22 @@
             "soil.fetching": "⏳ मौसम और मिट्टी की जानकारी ली जा रही है...",
             "soil.geoUnsupported": "इस ब्राउज़र में लोकेशन समर्थित नहीं है।",
             "soil.locationDenied": "लोकेशन अनुमति नहीं मिली: ",
+
+            "region.title": "क्षेत्र-आधारित फसल सुझाव",
+            "region.subtitle": "अपने शहर का नाम लिखें (हिंदी या English) या GPS दबाएँ — आपके राज्य के लिए मिट्टी और सबसे अच्छी फसलें देखें।",
+            "region.cityLabel": "शहर / कस्बा",
+            "region.cityPlaceholder": "जैसे इंदौर / Indore",
+            "region.getBtn": "🌾 क्षेत्र की सलाह पाएँ",
+            "region.useLocation": "📍 मेरी लोकेशन से देखें",
+            "region.fetching": "⏳ क्षेत्र की जानकारी ली जा रही है...",
+            "region.locating": "📍 आपकी लोकेशन का पता लगाया जा रहा है...",
+            "region.cardLocation": "📍 स्थान",
+            "region.cardSoil": "🌱 मिट्टी का प्रकार",
+            "region.cardKharif": "🌾 खरीफ (बरसात) फसलें",
+            "region.cardRabi": "🌿 रबी (सर्दी) फसलें",
+            "region.cardZaid": "🌻 ज़ायद (गर्मी) फसलें",
+            "region.cardAdvice": "💡 व्यावहारिक सलाह",
+            "region.none": "—",
 
             "chat.title": "किसान चैटबोट",
             "chat.subtitle": "खेती से जुड़ा कोई भी सवाल पूछें — आपकी चुनी हुई भाषा में जवाब मिलेगा।",
@@ -1193,6 +1254,117 @@
         };
         el.className = `text-xs mb-2 p-2 rounded ${colors[type] || colors.info}`;
         el.innerText = text;
+    }
+
+    // ─────────────────────────────────────────
+    // 1b. Region-Based Crop Suggestions (city or GPS → state advice)
+    // ─────────────────────────────────────────
+    function showRegionNote(text, type = "info") {
+        const el = document.getElementById("regionNote");
+        if (!el) return;
+        if (!text) { el.classList.add("hidden"); el.innerText = ""; return; }
+        el.classList.remove("hidden");
+        const colors = {
+            info:  "text-gray-600 bg-gray-50",
+            warn:  "text-yellow-700 bg-yellow-50",
+            ok:    "text-green-700 bg-green-50",
+            error: "text-red-700 bg-red-50"
+        };
+        el.className = `text-xs mt-2 mb-2 p-2 rounded ${colors[type] || colors.info}`;
+        el.innerText = text;
+    }
+
+    function renderRegionResult(data) {
+        const box = document.getElementById("regionResult");
+        box.classList.remove("hidden");
+
+        const listOrDash = (arr) =>
+            (arr && arr.length)
+                ? `<ul class="list-disc list-inside text-sm text-gray-800 space-y-0.5">
+                       ${arr.map(c => `<li>${escapeHtml(c)}</li>`).join("")}
+                   </ul>`
+                : `<span class="text-gray-400 text-sm">${t("region.none")}</span>`;
+
+        const card = (title, body, accent) => `
+            <div class="rounded-lg border ${accent} p-3 bg-white">
+                <div class="text-xs font-semibold text-gray-600 mb-1">${escapeHtml(title)}</div>
+                <div>${body}</div>
+            </div>`;
+
+        box.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${card(t("region.cardLocation"),
+                       `<div class="text-base font-semibold text-green-800">${escapeHtml(data.location)}</div>`,
+                       "border-green-200")}
+                ${card(t("region.cardSoil"),
+                       `<div class="text-base font-semibold text-amber-800">${escapeHtml(data.soil)}</div>`,
+                       "border-amber-200")}
+                ${card(t("region.cardKharif"), listOrDash(data.kharif), "border-green-200")}
+                ${card(t("region.cardRabi"),   listOrDash(data.rabi),   "border-emerald-200")}
+                ${card(t("region.cardZaid"),   listOrDash(data.zaid),   "border-yellow-200")}
+                ${card(t("region.cardAdvice"),
+                       `<div class="text-sm text-gray-800 leading-relaxed">${escapeHtml(data.advice)}</div>`,
+                       "border-blue-200")}
+            </div>
+        `;
+    }
+
+    async function _fetchRegion(payload, btn) {
+        if (btn) disableBtn(btn);
+        showRegionNote(t("region.fetching"), "info");
+        document.getElementById("regionResult").classList.add("hidden");
+        try {
+            const res = await fetch(`${BASE_URL}/api/region-soil`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({...payload, language: getApiLang()})
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                showRegionNote(data.error || `Server error ${res.status}`, "error");
+                return;
+            }
+            showRegionNote(data.notice || "", data.notice ? "warn" : "info");
+            if (!data.notice) showRegionNote("");
+            renderRegionResult(data);
+        } catch (e) {
+            showRegionNote(t("result.error") + e.message, "error");
+        } finally {
+            if (btn) enableBtn(btn);
+        }
+    }
+
+    async function getRegionAdvice(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const city = document.getElementById("regionCity").value.trim();
+        if (!city) {
+            showRegionNote(t("region.cityPlaceholder"), "warn");
+            document.getElementById("regionCity").focus();
+            return;
+        }
+        const btn = (event && event.currentTarget && event.currentTarget.tagName === "BUTTON") ? event.currentTarget : null;
+        await _fetchRegion({city}, btn);
+    }
+
+    function getRegionAdviceByGPS(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        if (!navigator.geolocation) {
+            showRegionNote(t("soil.geoUnsupported"), "error");
+            return;
+        }
+        const btn = (event && event.currentTarget) ? event.currentTarget : null;
+        showRegionNote(t("region.locating"), "info");
+        if (btn) disableBtn(btn);
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                if (btn) enableBtn(btn);
+                await _fetchRegion({lat: pos.coords.latitude, lon: pos.coords.longitude}, btn);
+            },
+            (err) => {
+                if (btn) enableBtn(btn);
+                showRegionNote(t("soil.locationDenied") + err.message, "error");
+            }
+        );
     }
 
     function autofillSoilFromLocation(event) {
