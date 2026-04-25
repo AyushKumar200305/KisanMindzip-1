@@ -19,7 +19,6 @@
 
         /* Each agent's result panel becomes a bot chat bubble */
         #soilResult:not(.hidden),
-        #cropDoctorResult:not(.hidden),
         #diseaseResult:not(.hidden),
         #mandiResult:not(.hidden),
         #yojanaResult:not(.hidden) {
@@ -40,7 +39,6 @@
 
         /* Bot avatar (🌾) sitting to the left of every result bubble */
         #soilResult:not(.hidden)::before,
-        #cropDoctorResult:not(.hidden)::before,
         #diseaseResult:not(.hidden)::before,
         #mandiResult:not(.hidden)::before,
         #yojanaResult:not(.hidden)::before {
@@ -62,7 +60,6 @@
 
         /* Tiny "KisanMind" name tag above each bubble */
         #soilResult:not(.hidden)::after,
-        #cropDoctorResult:not(.hidden)::after,
         #diseaseResult:not(.hidden)::after,
         #mandiResult:not(.hidden)::after,
         #yojanaResult:not(.hidden)::after {
@@ -110,7 +107,6 @@
            can use the full width comfortably */
         @media (max-width: 480px) {
             #soilResult:not(.hidden),
-            #cropDoctorResult:not(.hidden),
             #diseaseResult:not(.hidden),
             #mandiResult:not(.hidden),
             #yojanaResult:not(.hidden) {
@@ -118,7 +114,6 @@
                 max-width: 100%;
             }
             #soilResult:not(.hidden)::before,
-            #cropDoctorResult:not(.hidden)::before,
             #diseaseResult:not(.hidden)::before,
             #mandiResult:not(.hidden)::before,
             #yojanaResult:not(.hidden)::before { display: none; }
@@ -154,7 +149,7 @@
         <div class="max-w-5xl mx-auto flex overflow-x-auto">
             <button type="button" onclick="showTab('soil')" id="tab-soil" class="tab-btn px-5 py-3 text-sm font-medium bg-green-900">🌱 <span data-i18n="nav.soil">Soil</span></button>
             <button type="button" onclick="showTab('chat')" id="tab-chat" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">💬 <span data-i18n="nav.chat">Chat</span></button>
-            <button type="button" onclick="showTab('doctor')" id="tab-doctor" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">🩺 <span data-i18n="nav.doctor">Crop Doctor</span></button>
+            <button type="button" onclick="showTab('doctor')" id="tab-doctor" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">🦠 <span data-i18n="nav.doctor">Disease Detection</span></button>
             <button type="button" onclick="showTab('mandi')" id="tab-mandi" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">💰 <span data-i18n="nav.mandi">Mandi</span></button>
             <button type="button" onclick="showTab('yojana')" id="tab-yojana" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">🏛️ <span data-i18n="nav.yojana">Schemes</span></button>
         </div>
@@ -267,37 +262,12 @@
             </div>
         </div>
 
-        <!-- 3. CROP DOCTOR -->
+        <!-- 3. DISEASE DETECTION -->
         <div id="page-doctor" class="page-section hidden">
-            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
-                <h2 class="text-xl font-bold text-green-700 mb-2">🩺 <span data-i18n="doctor.title">Crop Doctor</span></h2>
-                <p class="text-gray-500 text-sm mb-4" data-i18n="doctor.subtitle">Upload a photo of the diseased crop — get diagnosis and treatment.</p>
-                <div class="flex flex-col gap-3 mb-4">
-                    <div>
-                        <label class="text-sm text-gray-600" data-i18n="doctor.cropName">Crop name (optional)</label>
-                        <input id="cropName" type="text"
-                            data-i18n-placeholder="doctor.cropPlaceholder"
-                            placeholder="e.g. Wheat, Rice, Tomato"
-                            class="w-full border rounded p-2 mt-1"/>
-                    </div>
-                    <div>
-                        <label class="text-sm text-gray-600" data-i18n="doctor.uploadLabel">Upload crop photo</label>
-                        <input id="cropImage" type="file"
-                            accept="image/*,.webp,.jpg,.jpeg,.png"
-                            class="w-full border rounded p-2 mt-1"/>
-                    </div>
-                    <img id="imagePreview" src="" alt="Preview"
-                        class="hidden w-48 h-48 object-cover rounded-lg border-2 border-green-300"/>
-                </div>
-                <button type="button" onclick="testCropDoctor(event)"
-                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700"
-                    data-i18n="doctor.diagnoseBtn">Diagnose Disease</button>
-                <div id="cropDoctorResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
-            </div>
 
-            <!-- 3b. QUICK DISEASE SCAN (enhanced) -->
-            <div class="bg-white rounded-xl shadow p-4 sm:p-6 mt-4 border-l-4 border-green-600">
-                <h2 class="text-xl font-bold text-green-700 mb-1">🦠 <span data-i18n="disease.title">Quick Disease Scan</span></h2>
+            <!-- Disease Detection -->
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-green-600">
+                <h2 class="text-xl font-bold text-green-700 mb-1">🦠 <span data-i18n="disease.title">Disease Detection</span></h2>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="disease.subtitle">Select your crop, upload a photo — get instant diagnosis in your language.</p>
 
                 <!-- Row 1: Crop dropdown + Language toggle -->
@@ -459,7 +429,7 @@
 
             "nav.soil": "Soil",
             "nav.chat": "Chat",
-            "nav.doctor": "Crop Doctor",
+            "nav.doctor": "Disease Detection",
             "nav.mandi": "Mandi",
             "nav.yojana": "Schemes",
 
@@ -504,16 +474,7 @@
             "chat.listening": "🎤 Listening... please speak",
             "chat.micUnsupported": "Voice input is not supported in this browser.",
 
-            "doctor.title": "Crop Doctor",
-            "doctor.subtitle": "Upload a photo of the diseased crop — get diagnosis and treatment.",
-            "doctor.cropName": "Crop name (optional)",
-            "doctor.cropPlaceholder": "e.g. Wheat, Rice, Tomato",
-            "doctor.uploadLabel": "Upload crop photo",
-            "doctor.diagnoseBtn": "Diagnose Disease",
-            "doctor.noImage": "Please select an image first!",
-            "doctor.diagnosing": "Diagnosing... please wait a moment",
-
-            "disease.title": "Quick Disease Scan",
+            "disease.title": "Disease Detection",
             "disease.subtitle": "Select your crop, upload a photo — get instant diagnosis in your language.",
             "disease.cropLabel": "Select Crop",
             "disease.cropDefault": "-- Select Crop (optional) --",
@@ -564,7 +525,7 @@
 
             "nav.soil": "मिट्टी",
             "nav.chat": "चैट",
-            "nav.doctor": "फसल डॉक्टर",
+            "nav.doctor": "रोग पहचान",
             "nav.mandi": "मंडी",
             "nav.yojana": "योजना",
 
@@ -609,16 +570,7 @@
             "chat.listening": "🎤 सुन रहा हूँ... अब बोलिए",
             "chat.micUnsupported": "इस ब्राउज़र में आवाज़ इनपुट उपलब्ध नहीं है।",
 
-            "doctor.title": "फसल डॉक्टर",
-            "doctor.subtitle": "बीमार फसल की फोटो अपलोड करें — रोग और उपचार बताएँगे।",
-            "doctor.cropName": "फसल का नाम (वैकल्पिक)",
-            "doctor.cropPlaceholder": "जैसे गेहूँ, धान, टमाटर",
-            "doctor.uploadLabel": "फसल की फोटो अपलोड करें",
-            "doctor.diagnoseBtn": "रोग की पहचान करें",
-            "doctor.noImage": "पहले एक तस्वीर चुनें!",
-            "doctor.diagnosing": "जाँच की जा रही है... थोड़ा इंतज़ार करें",
-
-            "disease.title": "त्वरित रोग जाँच",
+            "disease.title": "रोग पहचान",
             "disease.subtitle": "फसल चुनें, तस्वीर अपलोड करें — अपनी भाषा में तुरंत जाँच पाएँ।",
             "disease.cropLabel": "फसल चुनें",
             "disease.cropDefault": "-- फसल चुनें (वैकल्पिक) --",
@@ -886,19 +838,6 @@
         document.getElementById("chatMessages").innerHTML = "";
     }
 
-    // 3. Crop Doctor
-    document.getElementById("cropImage").addEventListener("change", function() {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById("imagePreview");
-                preview.src = e.target.result;
-                preview.classList.remove("hidden");
-            };
-            reader.readAsDataURL(file);
-        }
-    });
 
 
     // ─────────────────────────────────────────
@@ -1038,42 +977,6 @@
         } finally {
             enableBtn(btn);
             document.getElementById("diseaseScanningAnim").classList.add("hidden");
-        }
-    }
-
-    async function testCropDoctor(event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const imageFile = document.getElementById("cropImage").files[0];
-        const cropName = document.getElementById("cropName").value;
-
-        if (!imageFile) {
-            showResult("cropDoctorResult", t("doctor.noImage"), true);
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("image", imageFile);
-        if (cropName) formData.append("crop_name", cropName);
-        formData.append("language", getApiLang());
-
-        const btn = event.currentTarget;
-        disableBtn(btn);
-        try {
-            setLoading("cropDoctorResult", t("doctor.diagnosing"));
-            const data = await apiFetch(`${BASE_URL}/api/crop-doctor`, {
-                method: "POST",
-                body: formData
-            });
-            const output = data.diagnosis || data.agent_advice || JSON.stringify(data);
-            showTab("doctor");
-            showResult("cropDoctorResult", output);
-        } catch(e) {
-            showTab("doctor");
-            showResult("cropDoctorResult", t("result.error") + e.message, true);
-        } finally {
-            enableBtn(btn);
         }
     }
 

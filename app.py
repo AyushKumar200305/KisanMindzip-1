@@ -121,37 +121,7 @@ def reset_route():
         return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────
-# 3. CROP DOCTOR AGENT
-# ─────────────────────────────────────────
-@app.route("/api/crop-doctor", methods=["POST", "OPTIONS"])
-def crop_doctor_route():
-    if request.method == "OPTIONS":
-        return "", 200
-
-    if "image" not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
-
-    image = request.files["image"]
-    crop_name = request.form.get("crop_name", None)
-    language = request.form.get("language", "hi")
-
-    # Save image temporarily
-    image_path = f"temp_{image.filename}"
-    image.save(image_path)
-
-    try:
-        result = crop_doctor_agent(image_path, crop_name, language=language)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        # Always delete temp image
-        if os.path.exists(image_path):
-            os.remove(image_path)
-
-    return jsonify(result)
-
-# ─────────────────────────────────────────
-# 3b. QUICK DISEASE SCAN (image-only upload)
+# 3. DISEASE DETECTION (image-based scan)
 # ─────────────────────────────────────────
 @app.route("/api/disease", methods=["POST", "OPTIONS"])
 def disease_route():
@@ -470,7 +440,7 @@ def health():
             "POST /api/soil",
             "POST /api/chat",
             "POST /api/chat/reset",
-            "POST /api/crop-doctor",
+            "POST /api/disease",
             "POST /api/mandi",
             "POST /api/yojana"
         ]
