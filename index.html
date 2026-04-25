@@ -2010,17 +2010,28 @@
         el.classList.toggle("hidden", !show);
     }
 
+    // True when the user explicitly stopped (so we don't auto-restart)
+    let _userStoppedMic = false;
+    // Captures the input value at the moment listening started, so accumulated
+    // finalized segments are appended cleanly without duplication.
+    let _micBaseValue = "";
+
     function initRecognition() {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) return null;
         const r = new SR();
         r.lang = voiceLang;
-        r.interimResults = false;
+        // Show partial results so users see live feedback, but we only commit
+        // finalized segments into the input field.
+        r.interimResults = true;
         r.maxAlternatives = 1;
-        r.continuous = false;
+        // Keep listening through brief pauses so trailing words aren't dropped.
+        r.continuous = true;
 
         r.onstart = () => {
             isListening = true;
+            const input = document.getElementById(_micTarget.inputId);
+            _micBaseValue = input ? (input.value ? input.value + " " : "") : "";
             const btn = document.getElementById(_micTarget.btnId);
             if (btn) {
                 btn.classList.remove("bg-white", "text-green-700");
@@ -2029,10 +2040,19 @@
             showMicStatus(t("chat.listening"));
         };
         r.onerror = (e) => {
+            // "no-speech" and "aborted" are common when user pauses; ignore so
+            // continuous mode can resume cleanly.
+            if (e.error === "no-speech" || e.error === "aborted") return;
             showMicStatus("Mic error: " + e.error);
         };
         r.onend = () => {
+            // Auto-restart if the browser ended the session but the user didn't
+            // stop the mic (some browsers cap each session at ~60s).
+            if (!_userStoppedMic) {
+                try { r.start(); return; } catch (e) { /* fall through */ }
+            }
             isListening = false;
+            _userStoppedMic = false;
             const btn = document.getElementById(_micTarget.btnId);
             if (btn) {
                 btn.classList.add("bg-white", "text-green-700");
@@ -2042,11 +2062,22 @@
             setTimeout(() => showMicStatus("", false, sid), 1500);
         };
         r.onresult = (event) => {
-            const text = event.results[0][0].transcript;
             const input = document.getElementById(_micTarget.inputId);
             if (!input) return;
-            input.value = (input.value ? input.value + " " : "") + text;
-            input.focus();
+            // Walk every result so far. Concatenate finalized text and show
+            // any in-progress (interim) text as a live preview.
+            let finalText = "";
+            let interimText = "";
+            for (let i = 0; i < event.results.length; i++) {
+                const res = event.results[i];
+                const transcript = res[0].transcript;
+                if (res.isFinal) finalText += transcript;
+                else interimText += transcript;
+            }
+            input.value = (_micBaseValue + finalText + interimText).trimStart();
+            if (interimText) {
+                showMicStatus(t("chat.listening") + " …" + interimText.trim());
+            }
         };
         return r;
     }
@@ -2056,6 +2087,7 @@
         event.stopPropagation();
         // If a session is already running on a different target, stop it first
         if (isListening && recognition && _micTarget.btnId !== target.btnId) {
+            _userStoppedMic = true;
             try { recognition.stop(); } catch(e) {}
         }
         _micTarget = target;
@@ -2066,8 +2098,11 @@
         }
         recognition.lang = voiceLang;
         if (isListening) {
+            // User clicked the mic to end the session — don't auto-restart.
+            _userStoppedMic = true;
             try { recognition.stop(); } catch(e) {}
         } else {
+            _userStoppedMic = false;
             try { recognition.start(); } catch(e) { showMicStatus("Mic start error: " + e.message); }
         }
     }
