@@ -11,3 +11,9 @@ requests>=2.31.0
 email_validator
 flask-sqlalchemy
 psycopg2-binary
+email_validator
+flask
+flask-sqlalchemy
+gunicorn
+psycopg2-binary
+sift-stack-py
