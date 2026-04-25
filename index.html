@@ -97,6 +97,54 @@
             border-radius: 18px 18px 18px 4px !important;
             box-shadow: 0 1px 2px rgba(0,0,0,0.08);
         }
+        /* Refined bot reply card */
+        .km-bot-card {
+            background: #ffffff;
+            border: 1px solid #bbf7d0;
+            border-left: 4px solid #16a34a;
+            border-radius: 14px 14px 14px 4px;
+            box-shadow: 0 2px 6px rgba(22,101,52,0.08);
+            padding: 10px 14px;
+            max-width: 82%;
+            line-height: 1.55;
+            color: #1f2937;
+            font-size: 0.92rem;
+        }
+        .km-bot-card strong { color:#15803d; font-weight:600; }
+        .km-bot-card ul, .km-bot-card ol { margin: 6px 0 6px 4px; padding-left: 18px; }
+        .km-bot-card li { margin: 2px 0; }
+        .km-bot-card ul li::marker { color:#16a34a; }
+        .km-bot-card ol li::marker { color:#15803d; font-weight:600; }
+        .km-bot-card p { margin: 4px 0; }
+        .km-bot-card .km-disclaimer {
+            margin-top: 10px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: #fef9c3;
+            color: #854d0e;
+            font-size: 0.78rem;
+            font-style: italic;
+            border-left: 3px solid #facc15;
+        }
+        .km-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#16a34a,#15803d);
+            color:#fff;
+            display:flex; align-items:center; justify-content:center;
+            font-size: 16px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+        .km-user-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background:#fef3c7;
+            color:#92400e;
+            display:flex; align-items:center; justify-content:center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
 
         /* Weather widget result also gets a soft bubble feel */
         #weatherResult:not(.hidden) {
@@ -1138,6 +1186,84 @@
     }
 
     // 2. Chat
+    // Format a raw chatbot reply into clean HTML:
+    // - escape first (no XSS), then re-introduce known safe markup
+    // - **bold** → <strong>
+    // - lines starting with "- ", "• ", "* " → <ul><li>
+    // - lines starting with "1.", "2)" etc. → <ol><li>
+    // - paragraph breaks on blank lines
+    // - pull the closing "Follow local agricultural guidelines…" / "स्थानीय कृषि…" line into a styled disclaimer
+    function formatBotReply(raw) {
+        if (!raw) return "";
+        let txt = String(raw).trim();
+
+        // Pull out a trailing disclaimer line (English or Hindi variants)
+        let disclaimer = "";
+        const discRe = /(?:^|\n)\s*((?:Follow local agricultural guidelines[^\n]*)|(?:उपयोग से पहले[^\n]*स्थानीय[^\n]*)|(?:स्थानीय कृषि विभाग[^\n]*))\s*$/i;
+        const m = txt.match(discRe);
+        if (m) {
+            disclaimer = m[1].trim();
+            txt = txt.slice(0, m.index).trim();
+        }
+
+        const esc = escapeHtml(txt);
+        const lines = esc.split(/\r?\n/);
+
+        let html = "";
+        let listType = null;   // "ul" | "ol" | null
+        let paraBuf = [];
+
+        const flushPara = () => {
+            if (paraBuf.length) {
+                html += `<p>${paraBuf.join(" ")}</p>`;
+                paraBuf = [];
+            }
+        };
+        const closeList = () => {
+            if (listType) { html += `</${listType}>`; listType = null; }
+        };
+        const openList = (type) => {
+            if (listType !== type) {
+                closeList();
+                html += `<${type}>`;
+                listType = type;
+            }
+        };
+
+        for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line) { flushPara(); closeList(); continue; }
+
+            // Numbered list: "1.", "2)", "10."
+            const olM = line.match(/^(\d+)[.)]\s+(.*)$/);
+            // Bulleted list: "- ", "• ", "* "
+            const ulM = line.match(/^[-•*]\s+(.*)$/);
+
+            if (olM) {
+                flushPara();
+                openList("ol");
+                html += `<li>${olM[2]}</li>`;
+            } else if (ulM) {
+                flushPara();
+                openList("ul");
+                html += `<li>${ulM[1]}</li>`;
+            } else {
+                closeList();
+                paraBuf.push(line);
+            }
+        }
+        flushPara();
+        closeList();
+
+        // **bold** → <strong> (after lists, applied to whole output)
+        html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+        if (disclaimer) {
+            html += `<div class="km-disclaimer">⚠️ ${escapeHtml(disclaimer)}</div>`;
+        }
+        return html;
+    }
+
     async function testChat(event) {
         event.preventDefault();
         event.stopPropagation();
@@ -1147,17 +1273,24 @@
 
         const chatDiv = document.getElementById("chatMessages");
         chatDiv.innerHTML += `
-            <div class="flex justify-end">
-                <span class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm max-w-xs">${escapeHtml(message)}</span>
+            <div class="flex justify-end items-end gap-2">
+                <span class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm max-w-[78%] leading-relaxed">${escapeHtml(message)}</span>
+                <span class="km-user-avatar" title="You">👤</span>
             </div>`;
         input.value = "";
         chatDiv.scrollTop = chatDiv.scrollHeight;
 
         const sendBtn = document.querySelector('[onclick="testChat(event)"]');
         disableBtn(sendBtn);
-        // Show typing indicator
+        // Show typing indicator with bot avatar
         const typingId = "typing_" + Date.now();
-        chatDiv.innerHTML += `<div id="${typingId}" class="flex justify-start"><span class="bg-gray-100 text-gray-500 px-3 py-2 rounded-lg text-sm animate-pulse">⏳ …</span></div>`;
+        chatDiv.innerHTML += `
+            <div id="${typingId}" class="flex justify-start items-end gap-2">
+                <span class="km-avatar" title="KisanBot">🌾</span>
+                <span class="bg-white border border-green-200 text-gray-500 px-3 py-2 rounded-2xl text-sm animate-pulse">
+                    <span class="inline-block">●</span> <span class="inline-block">●</span> <span class="inline-block">●</span>
+                </span>
+            </div>`;
         chatDiv.scrollTop = chatDiv.scrollHeight;
 
         try {
@@ -1170,17 +1303,21 @@
             const replyId = "chatReply_" + Date.now();
             _resultStore[replyId] = data.reply || "";
             chatDiv.innerHTML += `
-                <div class="flex justify-start items-end gap-1">
-                    <span class="bg-white border px-3 py-2 rounded-lg text-sm max-w-xs">${escapeHtml(data.reply || "")}</span>
+                <div class="flex justify-start items-start gap-2">
+                    <span class="km-avatar" title="KisanBot">🌾</span>
+                    <div class="km-bot-card">${formatBotReply(data.reply || "")}</div>
                     <button type="button" onclick="playResult('${replyId}', event)"
                         title="${t('result.listen')}"
-                        class="bg-white border border-green-600 text-green-700 px-2 py-1 rounded text-xs hover:bg-green-50">🔊</button>
+                        class="bg-white border border-green-600 text-green-700 px-2 py-1 rounded-full text-xs hover:bg-green-50 mt-1 shrink-0">🔊</button>
                 </div>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
             autoSpeak(data.reply);
         } catch(e) {
             document.getElementById(typingId)?.remove();
-            chatDiv.innerHTML += `<div class="text-red-500 text-sm p-2 bg-red-50 rounded">${t('result.error')}${escapeHtml(e.message)}</div>`;
+            chatDiv.innerHTML += `<div class="flex justify-start items-start gap-2">
+                <span class="km-avatar" title="KisanBot">🌾</span>
+                <div class="km-bot-card border-l-red-500" style="border-left-color:#ef4444; background:#fef2f2; color:#991b1b;">${t('result.error')}${escapeHtml(e.message)}</div>
+            </div>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
         } finally {
             enableBtn(sendBtn);
