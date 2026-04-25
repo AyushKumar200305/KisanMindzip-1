@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+*.key
+secrets.json
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Project-specific
+uploads/
+temp_*
+*.exe
+zipFile.zip
+
+# Empty / unused model placeholder
+disease_model.h5
+
+# Replit local agent files
+.agents/
+.cache/
+.local/
+.upm/
+.config/
+attached_assets/

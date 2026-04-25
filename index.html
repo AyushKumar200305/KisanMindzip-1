@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KisanMind — AI Farmer Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-50 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-green-800 text-white py-4 px-6 shadow-lg">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <h1 class="text-2xl font-bold">🌾 KisanMind</h1>
+            <p class="text-green-200 text-sm">AI-Powered Farmer Assistant</p>
+        </div>
+    </header>
+
+    <!-- Nav Tabs -->
+    <div class="bg-green-700 text-white">
+        <div class="max-w-5xl mx-auto flex overflow-x-auto">
+            <button type="button" onclick="showTab('soil')" id="tab-soil" class="tab-btn px-5 py-3 text-sm font-medium bg-green-900">🌱 Soil</button>
+            <button type="button" onclick="showTab('chat')" id="tab-chat" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">💬 Chat</button>
+            <button type="button" onclick="showTab('doctor')" id="tab-doctor" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">🩺 Crop Doctor</button>
+            <button type="button" onclick="showTab('mandi')" id="tab-mandi" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">💰 Mandi</button>
+            <button type="button" onclick="showTab('yojana')" id="tab-yojana" class="tab-btn px-5 py-3 text-sm font-medium hover:bg-green-900">🏛️ Yojana</button>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto p-6">
+
+        <!-- 1. SOIL AGENT -->
+        <div id="page-soil" class="page-section">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-green-700 mb-2">🌱 Soil Sense Agent</h2>
+                <p class="text-gray-500 text-sm mb-4">Mitti ki jaankari do — best crop, khaad aur sinchai schedule milega</p>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-sm text-gray-600">Nitrogen (N)</label>
+                        <input id="N" type="number" placeholder="e.g. 90" class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Phosphorus (P)</label>
+                        <input id="P" type="number" placeholder="e.g. 42" class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Potassium (K)</label>
+                        <input id="K" type="number" placeholder="e.g. 43" class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Temperature (°C)</label>
+                        <input id="temperature" type="number" placeholder="e.g. 20.8" class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Humidity (%)</label>
+                        <input id="humidity" type="number" placeholder="e.g. 82" class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Soil pH</label>
+                        <input id="ph" type="number" placeholder="e.g. 6.5" class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-sm text-gray-600">Rainfall (mm)</label>
+                        <input id="rainfall" type="number" placeholder="e.g. 202.9" class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                </div>
+                <button type="button" onclick="testSoil(event)"
+                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
+                    Get Recommendation
+                </button>
+                <div id="soilResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+            </div>
+        </div>
+
+        <!-- 2. CHAT -->
+        <div id="page-chat" class="page-section hidden">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-green-700 mb-2">💬 Kisan Chatbot</h2>
+                <p class="text-gray-500 text-sm mb-4">Farming ke baare mein kuch bhi poochho — Hindi/Hinglish mein jawab milega</p>
+                <div id="chatMessages" class="h-64 overflow-y-auto bg-green-50 rounded-lg p-3 mb-3 space-y-3"></div>
+                <div class="flex gap-2">
+                    <input id="chatInput" type="text" placeholder="Apna sawaal likho..."
+                        class="border rounded-lg p-2 flex-1"
+                        onkeypress="if(event.key==='Enter') testChat(event)"/>
+                    <button type="button" onclick="testChat(event)" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700">Send</button>
+                    <button type="button" onclick="resetChat(event)" class="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. CROP DOCTOR -->
+        <div id="page-doctor" class="page-section hidden">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-green-700 mb-2">🩺 Crop Doctor</h2>
+                <p class="text-gray-500 text-sm mb-4">Bimaar fasal ki photo upload karo — diagnosis aur ilaaj milega</p>
+                <div class="flex flex-col gap-3 mb-4">
+                    <div>
+                        <label class="text-sm text-gray-600">Fasal ka naam (optional)</label>
+                        <input id="cropName" type="text" placeholder="e.g. Wheat, Rice, Tomato"
+                            class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Fasal ki photo upload karo</label>
+                        <input id="cropImage" type="file"
+                            accept="image/*,.webp,.jpg,.jpeg,.png"
+                            class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <img id="imagePreview" src="" alt="Preview"
+                        class="hidden w-48 h-48 object-cover rounded-lg border-2 border-green-300"/>
+                </div>
+                <button type="button" onclick="testCropDoctor(event)"
+                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
+                    Diagnose Disease
+                </button>
+                <div id="cropDoctorResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+            </div>
+        </div>
+
+        <!-- 4. MANDI BHAV -->
+        <div id="page-mandi" class="page-section hidden">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-green-700 mb-2">💰 Mandi Bhav</h2>
+                <p class="text-gray-500 text-sm mb-4">Live mandi prices aur bechne ki salah</p>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-sm text-gray-600">Fasal ka naam</label>
+                        <input id="commodity" type="text" placeholder="e.g. Wheat, Rice"
+                            class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">State</label>
+                        <input id="mandiState" type="text" placeholder="e.g. Uttar Pradesh"
+                            class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                </div>
+                <button type="button" onclick="testMandi(event)"
+                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
+                    Get Mandi Prices
+                </button>
+                <div id="mandiResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+            </div>
+        </div>
+
+        <!-- 5. SARKARI YOJANA -->
+        <div id="page-yojana" class="page-section hidden">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-green-700 mb-2">🏛️ Sarkari Yojana</h2>
+                <p class="text-gray-500 text-sm mb-4">Government schemes ki poori jaankari Hindi mein</p>
+                <div class="flex flex-col gap-3 mb-4">
+                    <div>
+                        <label class="text-sm text-gray-600">Apna sawaal likho</label>
+                        <input id="yojanaQuery" type="text"
+                            placeholder="e.g. PM-KISAN mein kaise apply karein"
+                            class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">State (optional)</label>
+                        <input id="yojanaState" type="text" placeholder="e.g. Uttar Pradesh"
+                            class="w-full border rounded p-2 mt-1"/>
+                    </div>
+                </div>
+                <button type="button" onclick="testYojana(event)"
+                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
+                    Get Scheme Info
+                </button>
+                <div id="yojanaResult" class="mt-4 p-4 bg-green-50 rounded-lg hidden whitespace-pre-wrap text-sm"></div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    const BASE_URL = "";
+    let currentTab = "soil";
+
+    // Tab switching
+    function showTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll(".page-section").forEach(el => el.classList.add("hidden"));
+        document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("bg-green-900"));
+        document.getElementById("page-" + tab).classList.remove("hidden");
+        document.getElementById("tab-" + tab).classList.add("bg-green-900");
+    }
+
+    // Show result helper
+    function showResult(elementId, content, isError=false) {
+        const el = document.getElementById(elementId);
+        el.classList.remove("hidden");
+        el.className = `mt-4 p-4 rounded-lg whitespace-pre-wrap text-sm ${isError ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-900'}`;
+        el.innerText = content;
+    }
+
+    // Loading state helper
+    function setLoading(elementId, message="Loading...") {
+        const el = document.getElementById(elementId);
+        el.classList.remove("hidden");
+        el.className = "mt-4 p-4 rounded-lg bg-yellow-50 text-yellow-700 text-sm";
+        el.innerText = "⏳ " + message;
+    }
+
+    // 1. Soil Agent
+    async function testSoil(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const payload = {
+            N: parseFloat(document.getElementById("N").value),
+            P: parseFloat(document.getElementById("P").value),
+            K: parseFloat(document.getElementById("K").value),
+            temperature: parseFloat(document.getElementById("temperature").value),
+            humidity: parseFloat(document.getElementById("humidity").value),
+            ph: parseFloat(document.getElementById("ph").value),
+            rainfall: parseFloat(document.getElementById("rainfall").value)
+        };
+        try {
+            setLoading("soilResult", "Recommendation aa rahi hai...");
+            const res = await fetch(`${BASE_URL}/api/soil`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            showResult("soilResult", `✅ Recommended Crop: ${data.recommended_crop.toUpperCase()}\n\n${data.agent_advice}`);
+        } catch(e) {
+            showResult("soilResult", "Error: " + e.message, true);
+        }
+    }
+
+    // 2. Chat
+    async function testChat(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const input = document.getElementById("chatInput");
+        const message = input.value.trim();
+        if (!message) return;
+
+        const chatDiv = document.getElementById("chatMessages");
+        chatDiv.innerHTML += `
+            <div class="flex justify-end">
+                <span class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm max-w-xs">${message}</span>
+            </div>`;
+        input.value = "";
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        try {
+            const res = await fetch(`${BASE_URL}/api/chat`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({message})
+            });
+            const data = await res.json();
+            chatDiv.innerHTML += `
+                <div class="flex justify-start">
+                    <span class="bg-white border px-3 py-2 rounded-lg text-sm max-w-xs">${data.reply}</span>
+                </div>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        } catch(e) {
+            chatDiv.innerHTML += `<div class="text-red-500 text-sm">Error: ${e.message}</div>`;
+        }
+    }
+
+    async function resetChat(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        await fetch(`${BASE_URL}/api/chat/reset`, {method: "POST"});
+        document.getElementById("chatMessages").innerHTML = "";
+    }
+
+    // 3. Crop Doctor
+    document.getElementById("cropImage").addEventListener("change", function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById("imagePreview");
+                preview.src = e.target.result;
+                preview.classList.remove("hidden");
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    async function testCropDoctor(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const imageFile = document.getElementById("cropImage").files[0];
+        const cropName = document.getElementById("cropName").value;
+
+        if (!imageFile) {
+            showResult("cropDoctorResult", "Pehle ek image select karo!", true);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        if (cropName) formData.append("crop_name", cropName);
+
+        try {
+            setLoading("cropDoctorResult", "Diagnosis ho rahi hai... thoda wait karo");
+            const res = await fetch(`${BASE_URL}/api/crop-doctor`, {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
+            const output = data.diagnosis || data.agent_advice || JSON.stringify(data);
+            showTab("doctor");
+            showResult("cropDoctorResult", output);
+        } catch(e) {
+            showTab("doctor");
+            showResult("cropDoctorResult", "Error: " + e.message, true);
+        }
+    }
+
+    // 4. Mandi Bhav
+    async function testMandi(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const payload = {
+            commodity: document.getElementById("commodity").value,
+            state: document.getElementById("mandiState").value
+        };
+        try {
+            setLoading("mandiResult", "Mandi prices fetch ho rahi hain...");
+            const res = await fetch(`${BASE_URL}/api/mandi`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            showResult("mandiResult", data.agent_advice);
+        } catch(e) {
+            showResult("mandiResult", "Error: " + e.message, true);
+        }
+    }
+
+    // 5. Sarkari Yojana
+    async function testYojana(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const payload = {
+            query: document.getElementById("yojanaQuery").value,
+            state: document.getElementById("yojanaState").value || null
+        };
+        try {
+            setLoading("yojanaResult", "Jaankari dhundhi ja rahi hai...");
+            const res = await fetch(`${BASE_URL}/api/yojana`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            showResult("yojanaResult", data.agent_advice);
+        } catch(e) {
+            showResult("yojanaResult", "Error: " + e.message, true);
+        }
+    }
+</script>
+
+</body>
+</html>
