@@ -3,8 +3,9 @@ from groq import Groq
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "missing")
 
-# Store conversation history for memory
+# Store conversation history for memory — capped to avoid unbounded growth
 conversation_history = []
+MAX_HISTORY_TURNS = 10  # keep last 10 user+assistant pairs = 20 messages
 
 SYSTEM_PROMPT_HI = """
 Tu KisanMind ka AI assistant hai — ek expert Kisan Sevak.
@@ -39,33 +40,40 @@ def _lang_rule(language):
 
 
 def chat_with_kisan(user_message, language="hi"):
-    # Add user message to history
+    if not user_message or not user_message.strip():
+        return "Please send a message." if (language or "").lower().startswith("en") else "कृपया कोई संदेश भेजें।"
+
     conversation_history.append({
         "role": "user",
-        "content": user_message
+        "content": user_message.strip()
     })
+
+    # Trim history to keep only the last MAX_HISTORY_TURNS turns
+    if len(conversation_history) > MAX_HISTORY_TURNS * 2:
+        del conversation_history[:-MAX_HISTORY_TURNS * 2]
 
     base = SYSTEM_PROMPT_EN if (language or "").lower().startswith("en") else SYSTEM_PROMPT_HI
     sys_prompt = base + _lang_rule(language)
 
-    # Call Groq with full history for memory
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {"role": "system", "content": sys_prompt}
-        ] + conversation_history,
-        max_tokens=200
-    )
-    
-    # Get reply
-    reply = response.choices[0].message.content
-    
-    # Add assistant reply to history
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": sys_prompt}
+            ] + conversation_history,
+            max_tokens=200,
+            temperature=0.7,
+        )
+        reply = response.choices[0].message.content
+    except Exception as e:
+        conversation_history.pop()  # remove the user message we just added
+        raise RuntimeError(f"AI service error: {e}") from e
+
     conversation_history.append({
         "role": "assistant",
         "content": reply
     })
-    
+
     return reply
 
 def reset_chat():

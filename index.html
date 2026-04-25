@@ -160,7 +160,7 @@
         </div>
     </div>
 
-    <div class="max-w-5xl mx-auto p-6">
+    <div class="max-w-5xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
 
         <!-- WEATHER WIDGET (compact, shown on every tab) -->
         <div class="bg-white rounded-xl shadow p-4 mb-4 border border-green-200">
@@ -189,7 +189,7 @@
 
         <!-- 1. SOIL AGENT -->
         <div id="page-soil" class="page-section">
-            <div class="bg-white rounded-xl shadow p-6">
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
                 <h2 class="text-xl font-bold text-green-700 mb-2">🌱 <span data-i18n="soil.title">Soil Sense Agent</span></h2>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="soil.subtitle">Enter your soil details to get the best crop, fertilizer and irrigation schedule.</p>
                 <div class="flex justify-end mb-3">
@@ -238,7 +238,7 @@
 
         <!-- 2. CHAT -->
         <div id="page-chat" class="page-section hidden">
-            <div class="bg-white rounded-xl shadow p-6">
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
                 <h2 class="text-xl font-bold text-green-700 mb-2">💬 <span data-i18n="chat.title">Kisan Chatbot</span></h2>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="chat.subtitle">Ask anything about farming — answers in your selected language.</p>
                 <div id="chatMessages" class="h-64 overflow-y-auto bg-green-50 rounded-lg p-3 mb-3 space-y-3"></div>
@@ -269,7 +269,7 @@
 
         <!-- 3. CROP DOCTOR -->
         <div id="page-doctor" class="page-section hidden">
-            <div class="bg-white rounded-xl shadow p-6">
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
                 <h2 class="text-xl font-bold text-green-700 mb-2">🩺 <span data-i18n="doctor.title">Crop Doctor</span></h2>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="doctor.subtitle">Upload a photo of the diseased crop — get diagnosis and treatment.</p>
                 <div class="flex flex-col gap-3 mb-4">
@@ -318,10 +318,10 @@
 
         <!-- 4. MANDI BHAV -->
         <div id="page-mandi" class="page-section hidden">
-            <div class="bg-white rounded-xl shadow p-6">
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
                 <h2 class="text-xl font-bold text-green-700 mb-2">💰 <span data-i18n="mandi.title">Mandi Prices</span></h2>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="mandi.subtitle">Live mandi prices and selling advice.</p>
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     <div>
                         <label class="text-sm text-gray-600" data-i18n="mandi.commodity">Crop name</label>
                         <input id="commodity" type="text"
@@ -354,7 +354,7 @@
 
         <!-- 5. SARKARI YOJANA -->
         <div id="page-yojana" class="page-section hidden">
-            <div class="bg-white rounded-xl shadow p-6">
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
                 <h2 class="text-xl font-bold text-green-700 mb-2">🏛️ <span data-i18n="yojana.title">Government Schemes</span></h2>
                 <p class="text-gray-500 text-sm mb-4" data-i18n="yojana.subtitle">Full info on government schemes for farmers.</p>
                 <div class="flex flex-col gap-3 mb-4">
@@ -686,31 +686,69 @@
         el.innerText = "⏳ " + message;
     }
 
+    // Button disable/enable helpers to prevent double-submission
+    function disableBtn(btn) {
+        if (!btn) return;
+        btn._origText = btn.innerHTML;
+        btn.disabled = true;
+        btn.classList.add("opacity-60", "cursor-not-allowed");
+    }
+    function enableBtn(btn) {
+        if (!btn) return;
+        btn.disabled = false;
+        btn.classList.remove("opacity-60", "cursor-not-allowed");
+        if (btn._origText !== undefined) btn.innerHTML = btn._origText;
+    }
+
+    // Unified fetch helper — handles non-200 HTTP codes too
+    async function apiFetch(url, options) {
+        const res = await fetch(url, options);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+        return data;
+    }
+
     // 1. Soil Agent
     async function testSoil(event) {
         event.preventDefault();
         event.stopPropagation();
+
+        // Validate all fields before sending
+        const fields = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"];
+        for (const f of fields) {
+            const v = document.getElementById(f).value.trim();
+            if (v === "" || isNaN(parseFloat(v))) {
+                showResult("soilResult", t("result.error") + `Please fill in "${f}" with a valid number.`, true);
+                document.getElementById(f).focus();
+                return;
+            }
+        }
+
         const payload = {
-            N: parseFloat(document.getElementById("N").value),
-            P: parseFloat(document.getElementById("P").value),
-            K: parseFloat(document.getElementById("K").value),
+            N:           parseFloat(document.getElementById("N").value),
+            P:           parseFloat(document.getElementById("P").value),
+            K:           parseFloat(document.getElementById("K").value),
             temperature: parseFloat(document.getElementById("temperature").value),
-            humidity: parseFloat(document.getElementById("humidity").value),
-            ph: parseFloat(document.getElementById("ph").value),
-            rainfall: parseFloat(document.getElementById("rainfall").value)
+            humidity:    parseFloat(document.getElementById("humidity").value),
+            ph:          parseFloat(document.getElementById("ph").value),
+            rainfall:    parseFloat(document.getElementById("rainfall").value),
+            language:    getApiLang()
         };
-        payload.language = getApiLang();
+
+        const btn = event.currentTarget;
+        disableBtn(btn);
         try {
             setLoading("soilResult", t("common.loading"));
-            const res = await fetch(`${BASE_URL}/api/soil`, {
+            const data = await apiFetch(`${BASE_URL}/api/soil`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
             showResult("soilResult", `${t("soil.recommended")}${data.recommended_crop.toUpperCase()}\n\n${data.agent_advice}`);
         } catch(e) {
             showResult("soilResult", t("result.error") + e.message, true);
+        } finally {
+            enableBtn(btn);
         }
     }
 
@@ -725,18 +763,25 @@
         const chatDiv = document.getElementById("chatMessages");
         chatDiv.innerHTML += `
             <div class="flex justify-end">
-                <span class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm max-w-xs">${message}</span>
+                <span class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm max-w-xs">${escapeHtml(message)}</span>
             </div>`;
         input.value = "";
         chatDiv.scrollTop = chatDiv.scrollHeight;
 
+        const sendBtn = document.querySelector('[onclick="testChat(event)"]');
+        disableBtn(sendBtn);
+        // Show typing indicator
+        const typingId = "typing_" + Date.now();
+        chatDiv.innerHTML += `<div id="${typingId}" class="flex justify-start"><span class="bg-gray-100 text-gray-500 px-3 py-2 rounded-lg text-sm animate-pulse">⏳ …</span></div>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
         try {
-            const res = await fetch(`${BASE_URL}/api/chat`, {
+            const data = await apiFetch(`${BASE_URL}/api/chat`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({message, language: getApiLang()})
             });
-            const data = await res.json();
+            document.getElementById(typingId)?.remove();
             const replyId = "chatReply_" + Date.now();
             _resultStore[replyId] = data.reply || "";
             chatDiv.innerHTML += `
@@ -749,14 +794,21 @@
             chatDiv.scrollTop = chatDiv.scrollHeight;
             speakReply(data.reply);
         } catch(e) {
-            chatDiv.innerHTML += `<div class="text-red-500 text-sm">${t('result.error')}${e.message}</div>`;
+            document.getElementById(typingId)?.remove();
+            chatDiv.innerHTML += `<div class="text-red-500 text-sm p-2 bg-red-50 rounded">${t('result.error')}${escapeHtml(e.message)}</div>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        } finally {
+            enableBtn(sendBtn);
+            input.focus();
         }
     }
 
     async function resetChat(event) {
         event.preventDefault();
         event.stopPropagation();
-        await fetch(`${BASE_URL}/api/chat/reset`, {method: "POST"});
+        try {
+            await fetch(`${BASE_URL}/api/chat/reset`, {method: "POST"});
+        } catch(_) {}
         document.getElementById("chatMessages").innerHTML = "";
     }
 
@@ -802,21 +854,20 @@
         formData.append("image", imageFile);
         formData.append("language", getApiLang());
 
+        const btn = event?.currentTarget;
+        disableBtn(btn);
         try {
             setLoading("diseaseResult", t("disease.scanning"));
-            const res = await fetch(`${BASE_URL}/api/disease`, {
+            const data = await apiFetch(`${BASE_URL}/api/disease`, {
                 method: "POST",
                 body: formData
             });
-            const data = await res.json();
-            if (data.error) {
-                showResult("diseaseResult", t("result.error") + data.error, true);
-                return;
-            }
             const output = data.diagnosis || JSON.stringify(data);
             showResult("diseaseResult", output);
         } catch(e) {
             showResult("diseaseResult", t("result.error") + e.message, true);
+        } finally {
+            enableBtn(btn);
         }
     }
 
@@ -837,19 +888,22 @@
         if (cropName) formData.append("crop_name", cropName);
         formData.append("language", getApiLang());
 
+        const btn = event.currentTarget;
+        disableBtn(btn);
         try {
             setLoading("cropDoctorResult", t("doctor.diagnosing"));
-            const res = await fetch(`${BASE_URL}/api/crop-doctor`, {
+            const data = await apiFetch(`${BASE_URL}/api/crop-doctor`, {
                 method: "POST",
                 body: formData
             });
-            const data = await res.json();
             const output = data.diagnosis || data.agent_advice || JSON.stringify(data);
             showTab("doctor");
             showResult("cropDoctorResult", output);
         } catch(e) {
             showTab("doctor");
             showResult("cropDoctorResult", t("result.error") + e.message, true);
+        } finally {
+            enableBtn(btn);
         }
     }
 
@@ -857,22 +911,33 @@
     async function testMandi(event) {
         event.preventDefault();
         event.stopPropagation();
-        const payload = {
-            commodity: document.getElementById("commodity").value,
-            state: document.getElementById("mandiState").value,
-            language: getApiLang()
-        };
+        const commodity = document.getElementById("commodity").value.trim();
+        const state = document.getElementById("mandiState").value.trim();
+        if (!commodity) {
+            showResult("mandiResult", t("result.error") + t("mandi.noCommodity"), true);
+            document.getElementById("commodity").focus();
+            return;
+        }
+        if (!state) {
+            showResult("mandiResult", t("result.error") + "Please enter the state name.", true);
+            document.getElementById("mandiState").focus();
+            return;
+        }
+        const payload = { commodity, state, language: getApiLang() };
+        const btn = event.currentTarget;
+        disableBtn(btn);
         try {
             setLoading("mandiResult", t("mandi.fetching"));
-            const res = await fetch(`${BASE_URL}/api/mandi`, {
+            const data = await apiFetch(`${BASE_URL}/api/mandi`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
             showResult("mandiResult", data.agent_advice);
         } catch(e) {
             showResult("mandiResult", t("result.error") + e.message, true);
+        } finally {
+            enableBtn(btn);
         }
     }
 
@@ -1189,22 +1254,31 @@
     async function testYojana(event) {
         event.preventDefault();
         event.stopPropagation();
+        const query = document.getElementById("yojanaQuery").value.trim();
+        if (!query) {
+            showResult("yojanaResult", t("result.error") + "Please enter a question.", true);
+            document.getElementById("yojanaQuery").focus();
+            return;
+        }
         const payload = {
-            query: document.getElementById("yojanaQuery").value,
-            state: document.getElementById("yojanaState").value || null,
+            query,
+            state: document.getElementById("yojanaState").value.trim() || null,
             language: getApiLang()
         };
+        const btn = event.currentTarget;
+        disableBtn(btn);
         try {
             setLoading("yojanaResult", t("yojana.fetching"));
-            const res = await fetch(`${BASE_URL}/api/yojana`, {
+            const data = await apiFetch(`${BASE_URL}/api/yojana`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
             showResult("yojanaResult", data.agent_advice);
         } catch(e) {
             showResult("yojanaResult", t("result.error") + e.message, true);
+        } finally {
+            enableBtn(btn);
         }
     }
 

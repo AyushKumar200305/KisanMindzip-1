@@ -1,7 +1,13 @@
 import os
+import time
+import math
+import logging
 import requests
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Import your agents
 from soil_agent import soil_sense_agent
@@ -16,6 +22,33 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # ─────────────────────────────────────────
+# Simple in-memory cache (TTL-based)
+# ─────────────────────────────────────────
+_cache: dict = {}
+
+def _cache_get(key: str):
+    entry = _cache.get(key)
+    if entry and time.time() < entry["expires"]:
+        return entry["value"]
+    return None
+
+def _cache_set(key: str, value, ttl_seconds: int):
+    _cache[key] = {"value": value, "expires": time.time() + ttl_seconds}
+
+# ─────────────────────────────────────────
+# Input validation helpers
+# ─────────────────────────────────────────
+def _safe_float(val, name):
+    """Parse float; raise ValueError with field name on failure."""
+    try:
+        result = float(val)
+        if math.isnan(result) or math.isinf(result):
+            raise ValueError()
+        return result
+    except (TypeError, ValueError):
+        raise ValueError(f"Invalid value for '{name}': {val!r}")
+
+# ─────────────────────────────────────────
 # 1. SOIL SENSE AGENT
 # ─────────────────────────────────────────
 @app.route("/api/soil", methods=["POST", "OPTIONS"])
@@ -23,20 +56,37 @@ def soil_route():
     if request.method == "OPTIONS":
         return "", 200
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "Invalid JSON body"}), 400
+
+        required = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
+        for field in required:
+            if field not in data or data[field] is None or str(data[field]).strip() == "":
+                return jsonify({"error": f"Field '{field}' is required"}), 400
+
+        N           = _safe_float(data["N"], "N")
+        P           = _safe_float(data["P"], "P")
+        K           = _safe_float(data["K"], "K")
+        temperature = _safe_float(data["temperature"], "temperature")
+        humidity    = _safe_float(data["humidity"], "humidity")
+        ph          = _safe_float(data["ph"], "ph")
+        rainfall    = _safe_float(data["rainfall"], "rainfall")
+
         result = soil_sense_agent(
-            N=data["N"],
-            P=data["P"],
-            K=data["K"],
-            temperature=data["temperature"],
-            humidity=data["humidity"],
-            ph=data["ph"],
-            rainfall=data["rainfall"],
+            N=N, P=P, K=K,
+            temperature=temperature,
+            humidity=humidity,
+            ph=ph,
+            rainfall=rainfall,
             language=data.get("language", "hi")
         )
         return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Soil agent error")
+        return jsonify({"error": "Service error — please try again."}), 500
 
 # ─────────────────────────────────────────
 # 2. KISAN CHATBOT
@@ -46,13 +96,18 @@ def chat_route():
     if request.method == "OPTIONS":
         return "", 200
     try:
-        data = request.get_json()
-        message = data.get("message", "")
+        data = request.get_json(silent=True) or {}
+        message = (data.get("message") or "").strip()
+        if not message:
+            return jsonify({"error": "Message cannot be empty"}), 400
         language = data.get("language", "hi")
         reply = chat_with_kisan(message, language=language)
         return jsonify({"reply": reply})
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 502
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Chat error")
+        return jsonify({"error": "Service error — please try again."}), 500
 
 @app.route("/api/chat/reset", methods=["POST", "OPTIONS"])
 def reset_route():
@@ -62,6 +117,7 @@ def reset_route():
         reset_chat()
         return jsonify({"status": "Chat reset successfully"})
     except Exception as e:
+        logger.exception("Chat reset error")
         return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────
@@ -142,15 +198,26 @@ def mandi_route():
     if request.method == "OPTIONS":
         return "", 200
     try:
-        data = request.get_json()
-        result = mandi_bhav_agent(
-            commodity=data["commodity"],
-            state=data["state"],
-            language=data.get("language", "hi")
-        )
+        data = request.get_json(silent=True) or {}
+        commodity = (data.get("commodity") or "").strip()
+        state     = (data.get("state") or "").strip()
+        language  = data.get("language", "hi")
+        if not commodity:
+            return jsonify({"error": "Commodity is required"}), 400
+        if not state:
+            return jsonify({"error": "State is required"}), 400
+
+        cache_key = f"mandi:{commodity.lower()}:{state.lower()}:{language}"
+        cached = _cache_get(cache_key)
+        if cached:
+            return jsonify(cached)
+
+        result = mandi_bhav_agent(commodity=commodity, state=state, language=language)
+        _cache_set(cache_key, result, ttl_seconds=1800)  # 30-min cache
         return jsonify(result)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Mandi agent error")
+        return jsonify({"error": "Service error — please try again."}), 500
 
 # ─────────────────────────────────────────
 # 5. SARKARI YOJANA AGENT
@@ -238,10 +305,16 @@ def weather_route():
     if lat and lon:
         params["lat"] = lat
         params["lon"] = lon
+        cache_key = f"weather:ll:{round(float(lat),2)}:{round(float(lon),2)}"
     elif city:
         params["q"] = city
+        cache_key = f"weather:city:{city.lower().strip()}"
     else:
         return jsonify({"error": "Provide either {lat, lon} or {city}."}), 400
+
+    cached = _cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
 
     try:
         # Current conditions
@@ -279,7 +352,7 @@ def weather_route():
 
         will_rain = max_pop >= 0.4 or rain_now_mm > 0 or weather_main.get("main") in ("Rain", "Drizzle", "Thunderstorm")
 
-        return jsonify({
+        result = {
             "location": cur.get("name") or city or f"{lat},{lon}",
             "country": (cur.get("sys") or {}).get("country", ""),
             "temperature_c": cur.get("main", {}).get("temp"),
@@ -300,11 +373,14 @@ def weather_route():
                 ),
                 "rainy_slots": rain_chunks[:6]
             }
-        })
+        }
+        _cache_set(cache_key, result, ttl_seconds=600)  # 10-min weather cache
+        return jsonify(result)
     except requests.RequestException as e:
         return jsonify({"error": f"Weather service unreachable: {e}"}), 502
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Weather route error")
+        return jsonify({"error": "Service error — please try again."}), 500
 
 # ─────────────────────────────────────────
 # 7. SOIL INFO BY LOCATION (OpenWeather + SoilGrids)
