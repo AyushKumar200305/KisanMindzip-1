@@ -12,8 +12,13 @@
     <header class="bg-green-800 text-white py-4 px-6 shadow-lg">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-3 flex-wrap">
             <h1 class="text-2xl font-bold">🌾 KisanMind</h1>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 flex-wrap">
                 <p class="text-green-200 text-sm hidden sm:block">AI-Powered Farmer Assistant</p>
+                <button type="button" id="globalSpeakerBtn" onclick="toggleSpeaker(event)"
+                        title="Auto-read replies / Jawab apne aap suniye"
+                        class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 cursor-pointer hover:bg-green-950">
+                    🔈 Auto-Read
+                </button>
                 <select id="langToggle" onchange="setVoiceLang(this.value)"
                         title="Voice language / आवाज़ की भाषा"
                         class="bg-green-900 text-white text-sm rounded px-2 py-1 border border-green-700 cursor-pointer">
@@ -233,12 +238,52 @@
         document.getElementById("tab-" + tab).classList.add("bg-green-900");
     }
 
-    // Show result helper
+    // Stores the plain-text body of each result panel so the Listen button can replay it
+    const _resultStore = {};
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+        }[c]));
+    }
+
+    // Show result helper — adds a Listen button + auto-reads aloud when speaker is on
     function showResult(elementId, content, isError=false) {
         const el = document.getElementById(elementId);
         el.classList.remove("hidden");
-        el.className = `mt-4 p-4 rounded-lg whitespace-pre-wrap text-sm ${isError ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-900'}`;
-        el.innerText = content;
+        el.className = `mt-4 p-4 rounded-lg text-sm ${isError ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-900'}`;
+        const text = String(content == null ? "" : content);
+        _resultStore[elementId] = text;
+        const safe = escapeHtml(text);
+        const listenBtn = isError ? '' : `
+            <div class="flex justify-end mb-2">
+                <button type="button" onclick="playResult('${elementId}', event)"
+                    title="Sunें / Listen"
+                    class="bg-white border border-green-600 text-green-700 px-2 py-1 rounded text-xs hover:bg-green-50">
+                    🔊 Sunें / Listen
+                </button>
+            </div>`;
+        el.innerHTML = `${listenBtn}<div class="whitespace-pre-wrap">${safe}</div>`;
+        if (!isError) speakReply(text);
+    }
+
+    // Manually replay a result aloud (always speaks, even if auto-read is off)
+    function playResult(elementId, event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const text = _resultStore[elementId];
+        if (!text || !("speechSynthesis" in window)) return;
+        try {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = voiceLang;
+            u.rate = 0.95;
+            u.pitch = 1;
+            const voices = window.speechSynthesis.getVoices();
+            const match = voices.find(v => v.lang === voiceLang)
+                       || voices.find(v => v.lang && v.lang.startsWith(voiceLang.split("-")[0]));
+            if (match) u.voice = match;
+            window.speechSynthesis.speak(u);
+        } catch(e) {}
     }
 
     // Loading state helper
@@ -299,9 +344,14 @@
                 body: JSON.stringify({message})
             });
             const data = await res.json();
+            const replyId = "chatReply_" + Date.now();
+            _resultStore[replyId] = data.reply || "";
             chatDiv.innerHTML += `
-                <div class="flex justify-start">
-                    <span class="bg-white border px-3 py-2 rounded-lg text-sm max-w-xs">${data.reply}</span>
+                <div class="flex justify-start items-end gap-1">
+                    <span class="bg-white border px-3 py-2 rounded-lg text-sm max-w-xs">${escapeHtml(data.reply || "")}</span>
+                    <button type="button" onclick="playResult('${replyId}', event)"
+                        title="Sunें / Listen"
+                        class="bg-white border border-green-600 text-green-700 px-2 py-1 rounded text-xs hover:bg-green-50">🔊</button>
                 </div>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
             speakReply(data.reply);
@@ -600,15 +650,25 @@
     }
 
     function toggleSpeaker(event) {
-        event.preventDefault();
-        event.stopPropagation();
+        if (event) { event.preventDefault(); event.stopPropagation(); }
         speakerOn = !speakerOn;
-        const btn = document.getElementById("speakerBtn");
-        btn.innerText = speakerOn ? "🔊" : "🔈";
-        if (speakerOn) {
-            btn.classList.add("bg-green-100");
-        } else {
-            btn.classList.remove("bg-green-100");
+
+        // Chat-tab speaker button
+        const chatBtn = document.getElementById("speakerBtn");
+        if (chatBtn) {
+            chatBtn.innerText = speakerOn ? "🔊" : "🔈";
+            chatBtn.classList.toggle("bg-green-100", speakerOn);
+        }
+
+        // Global header speaker button
+        const globalBtn = document.getElementById("globalSpeakerBtn");
+        if (globalBtn) {
+            globalBtn.innerText = speakerOn ? "🔊 Auto-Read ON" : "🔈 Auto-Read";
+            globalBtn.classList.toggle("bg-green-600", speakerOn);
+            globalBtn.classList.toggle("bg-green-900", !speakerOn);
+        }
+
+        if (!speakerOn) {
             try { window.speechSynthesis.cancel(); } catch(e) {}
         }
     }
