@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: kisanmind
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --timeout 120 --workers 2 app:app
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: DATA_GOV_API_KEY
+        sync: false
