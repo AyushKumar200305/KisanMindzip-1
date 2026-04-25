@@ -333,6 +333,74 @@ _PRICE_INSIGHT_MSG = {
                "➡️ कीमतें सामान्य हैं — ज़रूरत हो तो बेचें, वरना भाव पर नज़र रखें।"),
 }
 
+# ───── Price-trend persistence (small JSON file) ─────
+import json as _json
+_TREND_FILE = ".mandi_trend.json"
+
+def _trend_load():
+    try:
+        with open(_TREND_FILE, "r", encoding="utf-8") as f:
+            return _json.load(f)
+    except Exception:
+        return {}
+
+def _trend_save(snap):
+    try:
+        with open(_TREND_FILE, "w", encoding="utf-8") as f:
+            _json.dump(snap, f)
+    except Exception as e:
+        logger.warning("Could not persist mandi trend: %s", e)
+
+_TREND_MSG = {
+    "up":   ("↑ Prices are rising vs your last check.",
+             "↑ पिछली बार से कीमतें बढ़ी हैं।"),
+    "down": ("↓ Prices have fallen vs your last check.",
+             "↓ पिछली बार से कीमतें गिरी हैं।"),
+    "flat": ("→ Prices are roughly the same as your last check.",
+             "→ कीमतें पिछली बार जैसी ही हैं।"),
+    "new":  ("• First time you're checking this crop+state — trend will appear next time.",
+             "• पहली बार इस फसल+राज्य की जाँच — अगली बार ट्रेंड दिखेगा।"),
+}
+
+
+def _build_price_trend(commodity: str, state: str, current_avg: float):
+    """Compare current avg to last-seen snapshot and return trend dict."""
+    if not current_avg or current_avg <= 0:
+        return None
+    key = f"{(commodity or '').strip().lower()}|{(state or '').strip().lower()}"
+    snap = _trend_load()
+    prev = snap.get(key)
+
+    direction, diff_pct = "new", 0.0
+    if isinstance(prev, dict) and prev.get("avg"):
+        try:
+            prev_avg = float(prev["avg"])
+            if prev_avg > 0:
+                diff_pct = ((current_avg - prev_avg) / prev_avg) * 100.0
+                if diff_pct >= 2.0:
+                    direction = "up"
+                elif diff_pct <= -2.0:
+                    direction = "down"
+                else:
+                    direction = "flat"
+        except Exception:
+            pass
+
+    en, hi = _TREND_MSG[direction]
+    result = {
+        "direction":     direction,
+        "current_avg":   round(current_avg, 2),
+        "previous_avg":  round(float(prev["avg"]), 2) if isinstance(prev, dict) and prev.get("avg") else None,
+        "previous_date": (prev or {}).get("date") if isinstance(prev, dict) else None,
+        "change_pct":    round(diff_pct, 1),
+        "message_en":    en,
+        "message_hi":    hi,
+    }
+    # Persist new snapshot for next call
+    snap[key] = {"avg": round(current_avg, 2), "date": time.strftime("%Y-%m-%d %H:%M")}
+    _trend_save(snap)
+    return result
+
 
 def _to_float(v):
     try:
@@ -406,12 +474,17 @@ def mandi_route():
 
         cache_key = f"mandi:{commodity.lower()}:{state.lower()}:{language}"
         cached = _cache_get(cache_key)
-        if cached:
-            return jsonify(cached)
+        if cached is not None:
+            result = dict(cached)  # don't mutate the cached object
+        else:
+            result = mandi_bhav_agent(commodity=commodity, state=state, language=language)
+            result["price_insight"] = _build_price_insight(commodity, result.get("live_prices") or [])
+            _cache_set(cache_key, result, ttl_seconds=1800)  # 30-min cache for prices+advice
 
-        result = mandi_bhav_agent(commodity=commodity, state=state, language=language)
-        result["price_insight"] = _build_price_insight(commodity, result.get("live_prices") or [])
-        _cache_set(cache_key, result, ttl_seconds=1800)  # 30-min cache
+        # Trend is computed/refreshed every call so each visit updates the snapshot.
+        insight = result.get("price_insight") or {}
+        avg = insight.get("average_price") or 0
+        result["price_trend"] = _build_price_trend(commodity, state, float(avg))
         return jsonify(result)
     except Exception as e:
         logger.exception("Mandi agent error")
@@ -488,6 +561,8 @@ def mandi_by_location_route():
         )
         result["detected_state"] = state
         result["price_insight"] = _build_price_insight(commodity, result.get("live_prices") or [])
+        avg = (result.get("price_insight") or {}).get("average_price") or 0
+        result["price_trend"] = _build_price_trend(commodity, state, float(avg))
         return jsonify(result)
     except requests.RequestException:
         logger.exception("Mandi-by-location: upstream unreachable")

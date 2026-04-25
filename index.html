@@ -665,6 +665,8 @@
             "mandi.adviceTitle": "💡 Selling Advice",
             "mandi.perQuintal": "per quintal",
             "mandi.insightTitle": "📊 Price Insight",
+            "mandi.trendTitle": "📈 Price Trend",
+            "mandi.trendVs": "vs last check",
             "mandi.findNearby": "📍 Find Nearby Mandi",
             "mandi.askCity": "Please enter your city to find nearby mandis:",
             "mandi.locating": "Finding nearby mandi...",
@@ -801,6 +803,8 @@
             "mandi.adviceTitle": "💡 बेचने की सलाह",
             "mandi.perQuintal": "प्रति क्विंटल",
             "mandi.insightTitle": "📊 कीमत संकेत",
+            "mandi.trendTitle": "📈 कीमत का रुझान",
+            "mandi.trendVs": "पिछली जाँच की तुलना में",
             "mandi.findNearby": "📍 नजदीकी मंडी खोजें",
             "mandi.askCity": "नज़दीकी मंडी खोजने के लिए अपना शहर लिखें:",
             "mandi.locating": "नज़दीकी मंडी ढूँढी जा रही है...",
@@ -1290,6 +1294,29 @@
                 </div>`;
         }
 
+        // 1b. Price-trend chip (vs previous lookup)
+        let trendHtml = "";
+        const trend = data.price_trend;
+        if (trend) {
+            const trendStyle = {
+                up:   { cls: "border-green-300 bg-green-50 text-green-800", icon: "↑" },
+                down: { cls: "border-red-300 bg-red-50 text-red-800",       icon: "↓" },
+                flat: { cls: "border-gray-300 bg-gray-50 text-gray-700",    icon: "→" },
+                new:  { cls: "border-blue-300 bg-blue-50 text-blue-800",    icon: "•" },
+            };
+            const ts  = trendStyle[trend.direction] || trendStyle.new;
+            const msg = isEn ? trend.message_en : trend.message_hi;
+            const detail = (trend.previous_avg && trend.direction !== "new")
+                ? `<p class="text-[11px] mt-1 opacity-70">₹${escapeHtml(String(trend.previous_avg))} → ₹${escapeHtml(String(trend.current_avg))} (${trend.change_pct > 0 ? "+" : ""}${escapeHtml(String(trend.change_pct))}%) · ${t("mandi.trendVs")}${trend.previous_date ? " · " + escapeHtml(trend.previous_date) : ""}</p>`
+                : "";
+            trendHtml = `
+                <div class="rounded-xl border ${ts.cls} p-3">
+                    <p class="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">${t("mandi.trendTitle")}</p>
+                    <p class="text-sm font-semibold leading-relaxed">${ts.icon} ${escapeHtml(msg)}</p>
+                    ${detail}
+                </div>`;
+        }
+
         // 2. Live-price cards: 🌾 Crop | 🏪 Market | ₹ Price
         let priceHtml = "";
         if (prices.length > 0) {
@@ -1332,6 +1359,7 @@
         el.innerHTML = `
             <div class="space-y-3">
                 ${insightHtml}
+                ${trendHtml}
                 ${priceHtml}
                 <div class="bg-green-50 border border-green-200 rounded-xl p-3">
                     <p class="text-sm font-bold text-green-800 mb-1">${t("mandi.adviceTitle")}</p>
