@@ -131,7 +131,7 @@ python main.py
 | Ayush Kumar | [@AyushKumar200305](https://github.com/AyushKumar200305) |
 | Divyansh Tyagi | [@divyanshtyagi502](https://github.com/divyanshtyagi502) |
 | Aditya Mundhe | [@ADITYA-MUNDHE-03](https://github.com/ADITYA-MUNDHE-03) |
-| Mayank Fuliya | — |
+| Mayank Fuliya | [@AlphaHacker369](https://github.com/AlphaHacker369) |
 
 ---
 
